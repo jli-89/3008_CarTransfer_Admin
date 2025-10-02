@@ -1,0 +1,19 @@
+{
+  "name": "ljholding-management-api",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=18.20.8"
+  },
+  "main": "ljholding_backend_manage_server.js",
+  "scripts": {
+    "start": "node ljholding_backend_manage_server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "mysql2": "^3.11.3",
+    "bcryptjs": "^2.4.3",        
+    "jsonwebtoken": "^9.0.2"   
+  }
+}

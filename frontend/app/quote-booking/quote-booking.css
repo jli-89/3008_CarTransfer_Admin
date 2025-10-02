@@ -1,0 +1,265 @@
+/* General container and form styles */
+.quote-booking-container, .enquiries-container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+}
+
+h2, h3 {
+  text-align: center;
+  color: #1e3a5f;
+  margin-bottom: 1.5rem;
+}
+
+.quote-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Sections and dividers */
+.form-section, .vehicles-section {
+  border-bottom: 1px solid #e0e6ed;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-section:last-of-type, .vehicles-section:last-of-type {
+  border-bottom: none;
+}
+
+/* Form rows for a two-column layout */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+/* Form groups for labels and inputs */
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label, .enquiries-container label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #4a5568;
+}
+
+.form-group input, .form-group select, .enquiries-container input, .enquiries-container textarea {
+  width: 100%;
+  padding: 0.85rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input:focus, .form-group select:focus, .enquiries-container input:focus, .enquiries-container textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  outline: none;
+}
+
+/* Vehicle card styles */
+.vehicle-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  background-color: #f7fafc;
+}
+
+.vehicle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.vehicle-header h4 {
+  margin: 0;
+  color: #1e3a5f;
+}
+
+.radio-group {
+  display: block;
+}
+
+.radio-options {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.radio-options label {
+  font-weight: normal;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4a5568;
+}
+
+.remove-btn {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-weight: 500;
+}
+
+.remove-btn:hover {
+  background-color: #dc2626;
+}
+
+.add-vehicle-btn {
+  background-color: #22c55e;
+  color: white;
+  border: none;
+  padding: 0.85rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  width: 100%;
+  font-weight: 600;
+}
+
+.add-vehicle-btn:hover {
+  background-color: #16a34a;
+}
+
+.disclaimer-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1.5rem 0;
+}
+
+.disclaimer-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.disclaimer-checkbox a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.disclaimer-checkbox a:hover {
+  text-decoration: underline;
+}
+
+/* Form submission button */
+.submit-button {
+  padding: 1rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  width: 100%;
+  font-weight: 600;
+}
+
+.submit-button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.submit-button:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+
+/* Autocomplete styles */
+.autocomplete-group {
+  position: relative;
+}
+
+.autocomplete-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  list-style: none;
+  padding: 0;
+  margin: 0.2rem 0 0 0;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.autocomplete-list li {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.autocomplete-list li:hover {
+  background-color: #f7fafc;
+}
+
+.autocomplete-list li:last-child {
+  border-bottom: none;
+}
+
+.postcode {
+  color: #718096;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Enquiry form styles */
+.enquiries-container {
+  margin-top: 2rem;
+  background-color: #f0f4f8;
+}
+
+.enquiries-container p {
+  text-align: center;
+}
+
+.enquiry-button {
+  padding: 1rem;
+  background-color: #1e3a5f;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  width: 100%;
+  letter-spacing: 0.5px;
+}
+
+.enquiry-button:hover {
+  background-color: #1c324f;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}

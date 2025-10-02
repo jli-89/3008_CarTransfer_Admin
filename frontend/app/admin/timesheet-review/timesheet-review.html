@@ -1,0 +1,34 @@
+<div class="timesheet-review-container">
+  <h1>📋 Staff Timesheets</h1>
+
+  <!-- 🔍 Search Bar -->
+  <input
+    type="text"
+    [(ngModel)]="searchTerm"
+    placeholder="Search by staff name, date, or time..."
+    class="search-bar"
+  />
+
+  <table>
+    <thead>
+      <tr>
+        <th>Staff Name</th>
+        <th>Date</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Total Hours</th>
+        <th>Signature</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let sheet of filterTimesheets(timesheets)">
+        <td>{{ sheet.staffName }}</td>
+        <td>{{ sheet.date }}</td>
+        <td>{{ sheet.start }}</td>
+        <td>{{ sheet.end }}</td>
+        <td>{{ sheet.totalHours }}</td>
+        <td><img [src]="sheet.signature" alt="signature" height="50"/></td>
+      </tr>
+    </tbody>
+  </table>
+</div>

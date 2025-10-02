@@ -1,0 +1,61 @@
+<div class="staff-management-container">
+  <h1>Staff Management</h1>
+
+  <!-- Add Staff Button -->
+  <button class="add-btn" (click)="openAddStaffForm()">+ Add Staff</button>
+
+  <!-- Add Staff Form -->
+  <div *ngIf="showAddForm" class="add-staff-form">
+    <h3>Add New Staff</h3>
+
+    <label>Name:</label>
+    <input [(ngModel)]="newStaff.name" type="text" />
+
+    <label>Email:</label>
+    <input [(ngModel)]="newStaff.email" type="email" />
+
+    <label>Role:</label>
+    <input [(ngModel)]="newStaff.role" type="text" />
+
+    <label>Username:</label>
+    <input [(ngModel)]="newStaff.username" type="text" />
+
+    <label>Password:</label>
+    <input [(ngModel)]="newStaff.password" type="password" />
+
+    <button (click)="addStaff()">Save</button>
+    <button (click)="cancelAddStaff()">Cancel</button>
+  </div>
+
+  <!-- Staff Table -->
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Username</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let staff of staffList">
+        <td>{{ staff.id }}</td>
+        <td>{{ staff.name }}</td>
+        <td>{{ staff.email }}</td>
+        <td>{{ staff.role }}</td>
+        <td>{{ staff.username }}</td>
+        <td>{{ staff.status }}</td>
+        <td>
+          <button (click)="toggleStatus(staff)">
+            {{ staff.status === 'Active' ? 'Deactivate' : 'Activate' }}
+          </button>
+          <button (click)="resetPassword(staff)">Reset Password</button>
+          <button class="delete" (click)="deleteStaff(staff)">Delete</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,6 @@
+.map-container {
+  height: 400px; /* Make sure this is present */
+  width: 100%;  /* Make sure this is present */
+  margin-top: 20px;
+  border: 1px solid #ccc;
+}
