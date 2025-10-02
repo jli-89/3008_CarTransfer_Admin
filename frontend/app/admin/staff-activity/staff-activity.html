@@ -1,0 +1,22 @@
+<div class="staff-activity-container">
+  <h1>Staff Activity Log</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Staff ID</th>
+        <th>Action</th>
+        <th>Description</th>
+        <th>Timestamp</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let log of logs">
+        <td>{{ log.staffId }}</td>
+        <td>{{ log.action }}</td>
+        <td>{{ log.description }}</td>
+        <td>{{ log.timestamp }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

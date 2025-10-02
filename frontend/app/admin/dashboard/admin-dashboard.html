@@ -1,0 +1,120 @@
+<div class="admin-dashboard-container">
+  <h1>Admin Dashboard</h1>
+
+  <!-- 🔹 Admin Navigation -->
+  <nav class="admin-nav">
+    <a routerLink="/admin/staff-management" class="nav-link">👨‍💼 Staff Management</a>
+    <a routerLink="/admin/staff-activity" class="nav-link">📋 Staff Activity Log</a>
+    <a routerLink="/admin/timesheet-review" class="nav-link">🕒 Timesheet Review</a>
+  </nav>
+
+  <!-- 🔹 Summary Row -->
+  <div class="summary-row">
+    <div class="summary-card summary-enquiries">Total Enquiries: {{ enquiries.length }}</div>
+    <div class="summary-card summary-quotes">Total Quotes & Bookings: {{ quotesBookings.length }}</div>
+    <div class="summary-card summary-pending">Pending: {{ getPendingCount() }}</div>
+    <div class="summary-card summary-staff">Active Staff: {{ activeStaff }}</div>
+    <div class="summary-card summary-clients">Total Clients: {{ getTotalClients() }}</div>
+  </div>
+
+  <!-- 🔹 Search with Dropdown -->
+  <div class="search-container">
+    <select [(ngModel)]="selectedField" class="search-dropdown">
+      <option value="">All Fields</option>
+      <option value="clientName">Client Name</option>
+      <option value="email">Email</option>
+      <option value="pickupSuburb">Pickup Suburb</option>
+      <option value="deliverySuburb">Delivery Suburb</option>
+      <option value="phone">Phone</option>
+      <option value="status">Status</option>
+      <option value="message">Message</option>
+    </select>
+    <input type="text" [(ngModel)]="searchTerm" placeholder="Search..." class="search-bar" />
+  </div>
+
+  <!-- 🔹 Quotes & Bookings Table -->
+  <div class="table-section">
+    <h2>Quotes & Bookings</h2>
+    <button (click)="exportToExcel('quote')">Export Excel</button>
+    <button (click)="exportToCSV('quote')">Export CSV</button>
+    <button (click)="exportToPDF('quote')">Export PDF</button>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>Client Name</th><th>Email</th><th>Item Count</th>
+          <th>Pickup</th><th>Delivery</th><th>Phone</th><th>Status</th>
+          <th>Message</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let q of filterItems(quotesBookings)">
+          <td>{{ q.id }}</td>
+          <td>{{ q.clientName }}</td>
+          <td>{{ q.email }}</td>
+          <td>{{ q.itemCount }}</td>
+          <td>{{ q.pickupSuburb }}</td>
+          <td>{{ q.deliverySuburb }}</td>
+          <td>{{ q.phone }}</td>
+          <td>{{ q.status }}</td>
+          <td>{{ q.message }}</td>
+          <td>
+            <button (click)="updateStatus(q,'Not Started')">Not Started</button>
+            <button (click)="updateStatus(q,'In Progress')">In Progress</button>
+            <button (click)="updateStatus(q,'Resolved')">Resolved</button>
+            <button class="delete" (click)="deleteEntry(q,'quote')">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 🔹 Customer Enquiries -->
+  <div class="table-section">
+    <h2>Customer Enquiries</h2>
+    <button (click)="exportToExcel('enquiry')">Export Excel</button>
+    <button (click)="exportToCSV('enquiry')">Export CSV</button>
+    <button (click)="exportToPDF('enquiry')">Export PDF</button>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>Client Name</th><th>Email</th><th>Message</th><th>Date</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let e of filterItems(enquiries)">
+          <td>{{ e.id }}</td>
+          <td>{{ e.clientName }}</td>
+          <td>{{ e.email }}</td>
+          <td>{{ e.message }}</td>
+          <td>{{ e.submittedDate }}</td>
+          <td><button class="delete" (click)="deleteEntry(e,'enquiry')">Delete</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 🔹 Recycle Bin -->
+  <div class="table-section">
+    <h2>Recycle Bin (Auto-Delete after 30 Days)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>Type</th><th>Client Name</th><th>Email</th><th>Deleted At</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of recycleBin">
+          <td>{{ item.id }}</td>
+          <td>{{ item.type }}</td>
+          <td>{{ item.clientName || '-' }}</td>
+          <td>{{ item.email || '-' }}</td>
+          <td>{{ item.deletedAt | date:'short' }}</td>
+          <td>
+            <button (click)="restoreItem(item)">Restore</button>
+            <button class="delete" (click)="permanentDelete(item)">Delete Permanently</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

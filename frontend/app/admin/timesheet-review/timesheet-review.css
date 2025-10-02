@@ -1,0 +1,61 @@
+/* Timesheet Review Page Styling */
+.timesheet-review-container {
+  width: 95%;
+  margin: 20px auto;
+  padding: 30px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+h1 {
+  text-align: center;
+  font-size: 46px;
+  margin-bottom: 20px;
+  color: #333;
+}
+/* Search bar */
+.search-bar {
+  width: 100%;
+  padding: 16px;
+  font-size: 20px;
+  margin-bottom: 25px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+}
+
+.search-bar:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 6px rgba(0,123,255,0.3);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 22px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 14px;
+  text-align: left;
+}
+
+th {
+  background: #17a2b8; /* teal header */
+  color: white;
+  font-size: 24px;
+}
+
+tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+img {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 4px;
+  background: #fafafa;
+}

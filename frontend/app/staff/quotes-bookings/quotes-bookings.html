@@ -1,0 +1,66 @@
+<div class="quotes-bookings-container">
+  <h1>Quotes & Bookings</h1>
+
+  <!-- Search bar -->
+  <input
+    type="text"
+    placeholder="Search quotes/bookings by any field..."
+    [(ngModel)]="searchTerm"
+    class="search-bar"
+  />
+
+  <!-- Table -->
+  <table class="quotes-bookings-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Client Name</th>
+        <th>Email</th>
+        <th>Item Count</th>
+        <th>Pickup Suburb</th>
+        <th>Delivery Suburb</th>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Phone</th>
+        <th>Vehicle Details</th>
+        <th>Date</th>
+        <th>Status</th>
+        <th>Message</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let quote of filterItems(quotesBookings)">
+        <td>{{ quote.id }}</td>
+        <td>{{ quote.clientName }}</td>
+        <td>{{ quote.email }}</td>
+        <td>{{ quote.itemCount }}</td>
+        <td>{{ quote.pickupSuburb }}</td>
+        <td>{{ quote.deliverySuburb }}</td>
+        <td>{{ quote.firstName }}</td>
+        <td>{{ quote.lastName }}</td>
+        <td>{{ quote.phone }}</td>
+        <td>{{ quote.vehicleDetails }}</td>
+        <td>{{ quote.submittedDate }}</td>
+        <td>
+          <span
+            class="status-badge"
+            [ngClass]="{
+              'not-started': quote.status === 'Not Started',
+              'in-progress': quote.status === 'In Progress',
+              'resolved': quote.status === 'Resolved'
+            }"
+          >
+            {{ quote.status }}
+          </span>
+        </td>
+        <td>{{ quote.message }}</td>
+        <td class="action-buttons">
+          <button (click)="updateStatus(quote,'Not Started')" class="action-button not-started">Not Started</button>
+          <button (click)="updateStatus(quote,'In Progress')" class="action-button in-progress">In Progress</button>
+          <button (click)="updateStatus(quote,'Resolved')" class="action-button resolved">Resolved</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

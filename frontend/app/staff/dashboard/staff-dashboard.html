@@ -1,0 +1,108 @@
+<div class="staff-dashboard-container">
+  <h1>Staff Dashboard</h1>
+
+  <!-- 🔹 Staff Navigation -->
+  
+
+  <!-- Overview Cards -->
+  <div class="dashboard-overview-cards">
+    <div class="card summary-card">
+      <h3> Online Enquiries List</h3>
+      <p class="metric">{{ assignedInquiries.length }}</p>
+      <a routerLink="/staff/enquiries">View All</a>
+    </div>
+    <div class="card summary-card">
+      <h3>Quotes & Bookings Search List</h3>
+      <p class="metric">{{ quotesBookings.length }}</p>
+      <a routerLink="/staff/quotes-bookings">View All</a>
+    </div>
+    <div class="card summary-card">
+      <h3>Customers Quotes & Booking Form</h3>
+      <a routerLink="/staff/customer-enquiries">Customer Enquiries</a>
+    </div>
+        <div class="card summary-card">
+      <h3>My Timesheet</h3>
+      <a routerLink="/staff/timesheet">Open Timesheet</a>
+    </div>
+   <div class="card summary-card">
+     <h3>Work History</h3>
+  <a routerLink="/staff/work-history">View History</a>
+</div>
+<div class="card summary-card">
+  <h3>📑 Daily Reports</h3>
+  <a routerLink="/staff/report">Open Report</a>
+</div>
+
+  </div>
+
+  <!-- Enquiries Table -->
+  <h2>Order Management</h2>
+  <input type="text" placeholder="Search enquiries..." [(ngModel)]="searchTerm" class="search-bar" />
+  <table>
+    <thead>
+      <tr>
+        <th>Order ID</th><th>Client Name</th><th>Status</th><th>Submitted</th><th>Item Count</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let inquiry of filterItems(assignedInquiries)">
+        <td>{{ inquiry.id }}</td>
+        <td>{{ inquiry.clientName }}</td>
+        <td>
+          <span class="status-badge status-{{ inquiry.status.toLowerCase().replace(' ', '-') }}">{{ inquiry.status }}</span>
+        </td>
+        <td>{{ inquiry.submittedDate }}</td>
+        <td>{{ inquiry.itemCount }}</td>
+        <td>
+          <button (click)="updateInquiryStatus(inquiry.id,'Not Started','enquiry')">Not Started</button>
+          <button (click)="updateInquiryStatus(inquiry.id,'In Progress','enquiry')">In Progress</button>
+          <button (click)="updateInquiryStatus(inquiry.id,'Resolved','enquiry')">Resolved</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Quotes & Bookings Table -->
+  <h2>Quotes & Bookings</h2>
+  <input type="text" placeholder="Search quotes/bookings..." [(ngModel)]="searchTerm" class="search-bar" />
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Client Name</th><th>Email</th><th>Item Count</th>
+        <th>Pickup Suburb</th><th>Delivery Suburb</th><th>First Name</th><th>Last Name</th>
+        <th>Phone</th><th>Vehicle Details</th><th>Date</th><th>Status</th><th>Message</th><th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let quote of filterItems(quotesBookings)">
+        <td>{{ quote.id }}</td>
+        <td>{{ quote.clientName }}</td>
+        <td>{{ quote.email }}</td>
+        <td>{{ quote.itemCount }}</td>
+        <td>{{ quote.pickupSuburb }}</td>
+        <td>{{ quote.deliverySuburb }}</td>
+        <td>{{ quote.firstName }}</td>
+        <td>{{ quote.lastName }}</td>
+        <td>{{ quote.phone }}</td>
+        <td>
+          <ul>
+            <li *ngFor="let v of quote.vehicleDetails">
+              {{ v.make }} {{ v.model }} | {{ v.type }} | Reg: {{ v.registration }} | Driveable: {{ v.driveable }} | <60k: {{ v.valueUnder60k }}
+            </li>
+          </ul>
+        </td>
+        <td>{{ quote.submittedDate }}</td>
+        <td>
+          <span class="status-badge status-{{ quote.status.toLowerCase().replace(' ', '-') }}">{{ quote.status }}</span>
+        </td>
+        <td>{{ quote.message }}</td>
+        <td>
+          <button (click)="updateInquiryStatus(quote.id,'Not Started','quote')">Not Started</button>
+          <button (click)="updateInquiryStatus(quote.id,'In Progress','quote')">In Progress</button>
+          <button (click)="updateInquiryStatus(quote.id,'Resolved','quote')">Resolved</button>
+          <button [routerLink]="['/staff/booking-details', quote.id]">Process</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
