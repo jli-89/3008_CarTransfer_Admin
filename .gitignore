@@ -1,0 +1,65 @@
+# --- OS / 编辑器 ---
+.DS_Store
+Thumbs.db
+$RECYCLE.BIN/
+desktop.ini
+*.swp
+*.swo
+
+# VSCode（如需共享部分配置可在末尾取消注释）
+.vscode/
+# .vscode/*
+# !.vscode/extensions.json
+# !.vscode/launch.json
+# !.vscode/settings.json
+
+# --- Node & 包管理 ---
+node_modules/          # 递归忽略所有层级的 node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# --- Angular 构建与缓存 ---
+dist/
+.angular/
+out-tsc/
+tmp/
+coverage/
+
+# --- 后端（TypeScript 编译产物 & 依赖/日志/上传）---
+backend/node_modules/
+backend/dist/
+backend/build/
+backend/logs/
+backend/storage/
+backend/uploads/
+backend/*.log
+
+# --- 环境变量（保留示例文件）---
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# --- 数据库/本地状态（按需保留）---
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+
+# --- 压缩包/二进制（通常不需要进仓库，按需注释掉）---
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+
+# --- 其他临时文件夹（通配所有子目录）---
+**/cache/
+**/temp/
+**/tmp/
