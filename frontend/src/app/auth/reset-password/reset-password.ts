@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-reset-password',
@@ -47,7 +48,7 @@ export class ResetPasswordComponent {
     }
 
     // 🚀 Call backend to reset password
-    this.http.post('/api/auth/reset-password', { token: this.token, newPassword: this.newPassword })
+    this.http.post(`${environment.apiUrl}/auth/reset-password`, { token: this.token, newPassword: this.newPassword })
       .subscribe({
         next: () => {
           this.message = 'Your password has been successfully reset.';
