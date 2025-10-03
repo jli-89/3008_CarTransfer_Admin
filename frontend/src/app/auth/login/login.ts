@@ -1,13 +1,14 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { Router, RouterModule } from '@angular/router'; // Added RouterModule for routerLink
+import { Router, RouterModule } from '@angular/router';
+
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule], // Added RouterModule
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './login.html',
   styleUrls: ['./login.css']
 })
@@ -16,7 +17,7 @@ export class LoginComponent {
   password: string = '';
   error: string | null = null;
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(private authService: AuthService, private router: Router) {}
 
   login() {
     this.error = null;
@@ -25,22 +26,24 @@ export class LoginComponent {
       return;
     }
 
-    // --- MOCK LOGIN LOGIC (Replace with backend API later) ---
-    if (this.username === 'admin' && this.password === 'adminpass') {
-      console.log('Admin Login Successful (Mock)');
-      this.router.navigate(['/admin/dashboard']);
-    } else if (this.username === 'staff1' && this.password === 'staffpass1') {
-      console.log('Staff Login 1 Successful (Mock)');
-      this.router.navigate(['/staff/dashboard']);
-    } else if (this.username === 'staff2' && this.password === 'staffpass2') {
-      console.log('Staff Login 2 Successful (Mock)');
-      this.router.navigate(['/staff/dashboard']);
-    } else if (this.username === 'Tesla_420.com' && this.password === 'Temu_123') {
-      console.log('Tejinder Successful Login (Mock)');
-      this.router.navigate(['/staff/dashboard']);
-    } else {
-      this.error = 'Invalid username or password.';
-    }
-    // --- END MOCK LOGIN LOGIC ---
+    this.authService
+      .login({ login: this.username, password: this.password })
+      .subscribe({
+        next: ({ user }) => {
+          const userGroup = user?.user_group;
+
+          if (userGroup === 'admin') {
+            this.router.navigate(['/admin/dashboard']);
+          } else if (userGroup === 'staff') {
+            this.router.navigate(['/staff/dashboard']);
+          } else {
+            this.error = 'Unknown user group.';
+          }
+        },
+        error: (error) => {
+          const message = error?.error?.message || 'Login failed. Please try again.';
+          this.error = message;
+        }
+      });
   }
 }
