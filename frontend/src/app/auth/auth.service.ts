@@ -34,18 +34,21 @@ export class AuthService {
       );
   }
 
-  getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
-  }
-
   getUser<T = any>(): T | null {
     const user = localStorage.getItem(this.userKey);
     return user ? (JSON.parse(user) as T) : null;
   }
 
+  getToken(): string | null {
+    return localStorage.getItem(this.tokenKey);
+  }
+
+  isAuthenticated(): boolean {
+    return !!this.getToken();
+  }
+
   logout(): void {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.userKey);
+    this.clearStoredAuth();
   }
 
   private storeToken(token: string): void {
@@ -54,5 +57,10 @@ export class AuthService {
 
   private storeUser(user: any): void {
     localStorage.setItem(this.userKey, JSON.stringify(user));
+  }
+
+  private clearStoredAuth(): void {
+    localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.userKey);
   }
 }
