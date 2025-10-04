@@ -1,8 +1,10 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-reset-password',
@@ -14,19 +16,25 @@ import { HttpClient } from '@angular/common/http';
 export class ResetPasswordComponent {
   newPassword: string = '';
   confirmPassword: string = '';
-  token: string | null = null;
+  private userId: number | null = null;
+  private authToken: string | null = null;
   message: string | null = null;
   error: string | null = null;
 
   constructor(
-    private route: ActivatedRoute,
+    private authService: AuthService,
     private http: HttpClient,
     private router: Router
   ) {}
 
   ngOnInit() {
-    // ✅ Extract token from URL
-    this.token = this.route.snapshot.queryParamMap.get('token');
+    const user = this.authService.getUser<{ user_id?: number }>();
+    this.userId = user?.user_id ?? null;
+    this.authToken = this.authService.getToken();
+
+    if (!this.userId || !this.authToken) {
+      this.error = 'You must be logged in to reset your password.';
+    }
   }
 
   resetPassword() {
@@ -41,20 +49,35 @@ export class ResetPasswordComponent {
       this.error = 'Passwords do not match.';
       return;
     }
-    if (!this.token) {
-      this.error = 'Invalid reset link. Token missing.';
+    if (!this.userId || !this.authToken) {
+      this.error = 'You must be logged in to reset your password.';
       return;
     }
 
-    // 🚀 Call backend to reset password
-    this.http.post('/api/auth/reset-password', { token: this.token, newPassword: this.newPassword })
+    const headers = new HttpHeaders({ Authorization: `Bearer ${this.authToken}` });
+
+    this.http
+      .put<{ ok: boolean; affectedRows?: number; error?: string }>(
+        `${environment.apiUrl}/users/${this.userId}/password`,
+        { password: this.newPassword },
+        { headers }
+      )
       .subscribe({
-        next: () => {
-          this.message = 'Your password has been successfully reset.';
-          setTimeout(() => this.router.navigate(['/login']), 2000);
+        next: (response) => {
+          if (response?.ok) {
+            this.message = 'Password updated successfully. Redirecting to login...';
+            setTimeout(() => this.router.navigate(['/login']), 2000);
+          } else {
+            this.error = response?.error || 'Failed to reset password. Please try again.';
+          }
         },
-        error: () => {
-          this.error = 'Failed to reset password. Please try again.';
+        error: (err) => {
+          const message =
+            err?.error?.error ||
+            err?.error?.message ||
+            err?.message ||
+            'Failed to reset password. Please try again.';
+          this.error = message;
         }
       });
   }
