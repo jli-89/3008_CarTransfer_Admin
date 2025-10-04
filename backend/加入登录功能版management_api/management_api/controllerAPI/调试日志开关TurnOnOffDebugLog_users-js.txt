@@ -1,0 +1,13 @@
+怎么开/关这些调试日志？
+
+开：PowerShell 里先执行 setx DEBUG_AUTH "1"（或当前窗口 "$env:DEBUG_AUTH='1'"），然后重启后端。
+
+关：setx DEBUG_AUTH ""（或当前窗口清空），再重启后端。
+
+这样你随时可以用环境变量控制是否打印那些 [LOGIN] / [SQL] / [DB] 日志。
+
+PowerShell
+Turn on 	setx DEBUG_AUTH "1" 	then restart the server
+Turn off	setx DEBUG_AUTH ""	then restart the server
+
+Therefore you can use environment variable to decide if [LOGIN] / [SQL] / [DB] log will be printed
