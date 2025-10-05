@@ -8,7 +8,7 @@ const d = (...args) => DEBUG_AUTH && console.log(...args);
 const de = (...args) => DEBUG_AUTH && console.error(...args);
 
 function validGroup(group) {
-  return ["admin", "staff"].includes(group);
+  return ["superadmin", "admin", "staff"].includes(group);
 }
 
 function validStatus(status) {
@@ -39,7 +39,7 @@ async function createUser(req, res) {
   if (!validGroup(user_group)) {
     return res
       .status(400)
-      .json({ ok: false, error: "user_group must be 'admin' or 'staff'" });
+      .json({ ok: false, error: "user_group must be 'superadmin', 'admin' or 'staff'" });
   }
 
   if (!validStatus(status)) {
@@ -87,8 +87,8 @@ async function deleteUser(req, res) {
     const conn = await getPool("orders").getConnection();
 
     try {
-      const [[adminCount]] = await conn.query(
-        "SELECT COUNT(*) AS c FROM users WHERE user_group='admin'"
+      const [[superadminCount]] = await conn.query(
+        "SELECT COUNT(*) AS c FROM users WHERE user_group='superadmin'"
       );
       const [[target]] = await conn.query(
         "SELECT user_group FROM users WHERE user_id=?",
@@ -99,10 +99,10 @@ async function deleteUser(req, res) {
         return res.status(404).json({ ok: false, error: "user not found" });
       }
 
-      if (target.user_group === "admin" && adminCount.c <= 1) {
+      if (target.user_group === "superadmin" && superadminCount.c <= 1) {
         return res
           .status(400)
-          .json({ ok: false, error: "cannot delete the last admin" });
+          .json({ ok: false, error: "cannot delete the last superadmin" });
       }
 
       const [result] = await conn.query("DELETE FROM users WHERE user_id=?", [
