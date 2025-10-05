@@ -4,7 +4,7 @@
   background: #fff;
   padding: 30px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 h1 {
@@ -15,7 +15,7 @@ h1 {
 
 .add-btn {
   background: #28a745;
-  color: white;
+  color: #fff;
   font-size: 22px;
   padding: 12px 20px;
   border: none;
@@ -37,22 +37,56 @@ h1 {
   font-weight: bold;
 }
 
-.add-staff-form input {
+.add-staff-form input,
+.add-staff-form select {
   width: 100%;
   padding: 10px;
   margin-top: 4px;
   border: 1px solid #ccc;
   border-radius: 6px;
+  font-size: 16px;
 }
 
-.add-staff-form button {
-  margin-top: 15px;
-  margin-right: 10px;
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.form-actions button {
+  flex: 0 0 auto;
   padding: 10px 18px;
   font-size: 18px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
+}
+
+.form-actions button:first-child {
+  background: #007bff;
+  color: #fff;
+}
+
+.form-actions button:last-child {
+  background: #6c757d;
+  color: #fff;
+}
+
+.staff-error {
+  background: #f8d7da;
+  color: #721c24;
+  border-left: 4px solid #dc3545;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.loading,
+.empty-state {
+  margin-top: 20px;
+  text-align: center;
+  color: #555;
+  font-style: italic;
 }
 
 table {
@@ -61,7 +95,8 @@ table {
   font-size: 20px;
 }
 
-th, td {
+th,
+td {
   border: 1px solid #ddd;
   padding: 12px;
   text-align: left;
@@ -69,10 +104,10 @@ th, td {
 
 th {
   background: #007bff;
-  color: white;
+  color: #fff;
 }
 
-button {
+td button {
   margin-right: 10px;
   padding: 8px 14px;
   font-size: 16px;
@@ -81,17 +116,18 @@ button {
   cursor: pointer;
 }
 
-button.delete {
-  background: #dc3545;
-  color: white;
-}
-
-button:nth-child(1) {
+td button:first-child {
   background: #ffc107;
   color: #000;
 }
 
-button:nth-child(2) {
+td button:nth-child(2) {
   background: #17a2b8;
-  color: white;
+  color: #fff;
 }
+
+td button.delete {
+  background: #dc3545;
+  color: #fff;
+}
+

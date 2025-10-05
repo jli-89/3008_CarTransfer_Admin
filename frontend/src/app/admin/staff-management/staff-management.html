@@ -1,10 +1,12 @@
 <div class="staff-management-container">
   <h1>Staff Management</h1>
 
-  <!-- Add Staff Button -->
+  <div *ngIf="errorMessage" class="staff-error">
+    {{ errorMessage }}
+  </div>
+
   <button class="add-btn" (click)="openAddStaffForm()">+ Add Staff</button>
 
-  <!-- Add Staff Form -->
   <div *ngIf="showAddForm" class="add-staff-form">
     <h3>Add New Staff</h3>
 
@@ -15,7 +17,11 @@
     <input [(ngModel)]="newStaff.email" type="email" />
 
     <label>Role:</label>
-    <input [(ngModel)]="newStaff.role" type="text" />
+    <select [(ngModel)]="newStaff.role">
+      <option value="staff">Staff</option>
+      <option value="admin">Admin</option>
+      <option value="superadmin">Superadmin</option>
+    </select>
 
     <label>Username:</label>
     <input [(ngModel)]="newStaff.username" type="text" />
@@ -23,12 +29,17 @@
     <label>Password:</label>
     <input [(ngModel)]="newStaff.password" type="password" />
 
-    <button (click)="addStaff()">Save</button>
-    <button (click)="cancelAddStaff()">Cancel</button>
+    <div class="form-actions">
+      <button type="button" (click)="addStaff()" [disabled]="isSaving">Save</button>
+      <button type="button" (click)="cancelAddStaff()">Cancel</button>
+    </div>
   </div>
 
-  <!-- Staff Table -->
-  <table>
+  <div *ngIf="isLoading" class="loading">
+    Loading staff...
+  </div>
+
+  <table *ngIf="!isLoading && staffList.length">
     <thead>
       <tr>
         <th>#</th>
@@ -45,17 +56,23 @@
         <td>{{ staff.id }}</td>
         <td>{{ staff.name }}</td>
         <td>{{ staff.email }}</td>
-        <td>{{ staff.role }}</td>
+        <td>{{ staff.role | titlecase }}</td>
         <td>{{ staff.username }}</td>
-        <td>{{ staff.status }}</td>
+        <td>{{ staff.status | titlecase }}</td>
         <td>
-          <button (click)="toggleStatus(staff)">
-            {{ staff.status === 'Active' ? 'Deactivate' : 'Activate' }}
+          <button type="button" (click)="toggleStatus(staff)">
+            {{ staff.status === 'active' ? 'Deactivate' : 'Activate' }}
           </button>
-          <button (click)="resetPassword(staff)">Reset Password</button>
-          <button class="delete" (click)="deleteStaff(staff)">Delete</button>
+          <button type="button" (click)="resetPassword(staff)">Reset Password</button>
+          <button type="button" class="delete" (click)="deleteStaff(staff)">Delete</button>
         </td>
       </tr>
     </tbody>
   </table>
+
+  <div *ngIf="!isLoading && !staffList.length" class="empty-state">
+    No staff records found.
+  </div>
 </div>
+
+
