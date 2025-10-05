@@ -17,7 +17,7 @@ function validStatus(status) {
 
 /**
  * POST /api/users
- * body: { user_name, password, user_group, email, real_name?, status? }
+ * body: { user_name, password, user_group, email, real_name?, status?, office_location? }
  */
 async function createUser(req, res) {
   const {
@@ -27,6 +27,7 @@ async function createUser(req, res) {
     email,
     real_name = null,
     status = "active",
+    office_location = null,
   } = req.body || {};
 
   if (!user_name || !password || !user_group || !email) {
@@ -50,12 +51,16 @@ async function createUser(req, res) {
 
   try {
     const hash = await bcrypt.hash(password, 10);
+    const normalizedRealName =
+      typeof real_name === "string" && real_name.trim() ? real_name.trim() : null;
+    const normalizedOffice =
+      typeof office_location === "string" && office_location.trim() ? office_location.trim() : null;
     const conn = await getPool("orders").getConnection();
 
     try {
       const [result] = await conn.query(
-        "INSERT INTO users (user_name, user_password, user_group, real_name, email, status) VALUES (?, ?, ?, ?, ?, ?)",
-        [user_name, hash, user_group, real_name, email, status]
+        "INSERT INTO users (user_name, user_password, user_group, real_name, email, status, office_location) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [user_name, hash, user_group, normalizedRealName, email, status, normalizedOffice]
       );
 
       res.json({ ok: true, user_id: result.insertId });
@@ -142,7 +147,7 @@ async function login(req, res) {
 
       const sql = `
         SELECT user_id, user_name, email, user_password, user_group,
-               real_name, status
+               real_name, status, office_location
           FROM users
          WHERE user_name = ? OR email = ?
          LIMIT 1
@@ -188,6 +193,81 @@ async function login(req, res) {
     }
   } catch (err) {
     de("[LOGIN] error:", err);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+}
+
+/**
+ * PUT /api/users/:id
+ * body: { user_name, user_group, email, real_name?, status?, office_location? }
+ */
+async function updateUser(req, res) {
+  const userId = Number(req.params.id);
+  const {
+    user_name,
+    user_group,
+    email,
+    real_name = null,
+    status,
+    office_location = null,
+  } = req.body || {};
+
+  if (!userId || !user_name || !user_group || !email || !status) {
+    return res.status(400).json({
+      ok: false,
+      error: "userId, user_name, user_group, email and status are required",
+    });
+  }
+
+  if (!validGroup(user_group)) {
+    return res
+      .status(400)
+      .json({ ok: false, error: "user_group must be 'superadmin', 'admin' or 'staff'" });
+  }
+
+  if (!validStatus(status)) {
+    return res
+      .status(400)
+      .json({ ok: false, error: "status must be 'active' or 'inactive'" });
+  }
+
+  const normalizedRealName =
+    typeof real_name === "string" && real_name.trim() ? real_name.trim() : null;
+  const normalizedOffice =
+    typeof office_location === "string" && office_location.trim() ? office_location.trim() : null;
+
+  try {
+    const conn = await getPool("orders").getConnection();
+
+    try {
+      const [result] = await conn.query(
+        "UPDATE users SET user_name=?, user_group=?, real_name=?, email=?, status=?, office_location=? WHERE user_id=?",
+        [
+          user_name,
+          user_group,
+          normalizedRealName,
+          email,
+          status,
+          normalizedOffice,
+          userId,
+        ]
+      );
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ ok: false, error: "user not found" });
+      }
+
+      res.json({ ok: true, affectedRows: result.affectedRows });
+    } catch (err) {
+      if (err && err.code === "ER_DUP_ENTRY") {
+        return res.status(409).json({ ok: false, error: "email already exists" });
+      }
+
+      throw err;
+    } finally {
+      conn.release();
+    }
+  } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
 }
@@ -272,7 +352,7 @@ async function listUsers(req, res) {
 
     try {
       const [rows] = await conn.query(
-        "SELECT user_id, user_name, user_group, real_name, email, status FROM users ORDER BY user_id ASC"
+        "SELECT user_id, user_name, user_group, real_name, email, status, office_location FROM users ORDER BY user_id ASC"
       );
 
       res.json({ ok: true, data: rows });
@@ -299,7 +379,7 @@ async function getUser(req, res) {
 
     try {
       const [rows] = await conn.query(
-        "SELECT user_id, user_name, user_group, real_name, email, status FROM users WHERE user_id=?",
+        "SELECT user_id, user_name, user_group, real_name, email, status, office_location FROM users WHERE user_id=?",
         [userId]
       );
 
@@ -320,6 +400,7 @@ module.exports = {
   createUser,
   deleteUser,
   login,
+  updateUser,
   updateStatus,
   resetPassword,
   listUsers,

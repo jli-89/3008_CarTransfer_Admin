@@ -29,9 +29,46 @@
     <label>Password:</label>
     <input [(ngModel)]="newStaff.password" type="password" />
 
+    <label>Office Location:</label>
+    <input [(ngModel)]="newStaff.officeLocation" type="text" />
+
     <div class="form-actions">
       <button type="button" (click)="addStaff()" [disabled]="isSaving">Save</button>
       <button type="button" (click)="cancelAddStaff()">Cancel</button>
+    </div>
+  </div>
+
+  <div *ngIf="editingStaffId !== null && editStaff" class="edit-staff-form">
+    <h3>Edit Staff</h3>
+
+    <label>Name:</label>
+    <input [(ngModel)]="editStaff.name" type="text" />
+
+    <label>Email:</label>
+    <input [(ngModel)]="editStaff.email" type="email" />
+
+    <label>Role:</label>
+    <select [(ngModel)]="editStaff.role">
+      <option value="staff">Staff</option>
+      <option value="admin">Admin</option>
+      <option value="superadmin">Superadmin</option>
+    </select>
+
+    <label>Username:</label>
+    <input [(ngModel)]="editStaff.username" type="text" />
+
+    <label>Status:</label>
+    <select [(ngModel)]="editStaff.status">
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+    </select>
+
+    <label>Office Location:</label>
+    <input [(ngModel)]="editStaff.officeLocation" type="text" />
+
+    <div class="form-actions">
+      <button type="button" (click)="saveEditStaff()" [disabled]="isUpdating">Save</button>
+      <button type="button" (click)="cancelEditStaff()">Cancel</button>
     </div>
   </div>
 
@@ -48,6 +85,7 @@
         <th>Role</th>
         <th>Username</th>
         <th>Status</th>
+        <th>Office</th>
         <th>Action</th>
       </tr>
     </thead>
@@ -59,11 +97,13 @@
         <td>{{ staff.role | titlecase }}</td>
         <td>{{ staff.username }}</td>
         <td>{{ staff.status | titlecase }}</td>
+        <td>{{ staff.officeLocation || 'N/A' }}</td>
         <td>
-          <button type="button" (click)="toggleStatus(staff)">
+          <button type="button" class="edit" (click)="openEditStaff(staff)">Edit</button>
+          <button type="button" class="toggle" (click)="toggleStatus(staff)">
             {{ staff.status === 'active' ? 'Deactivate' : 'Activate' }}
           </button>
-          <button type="button" (click)="resetPassword(staff)">Reset Password</button>
+          <button type="button" class="reset" (click)="resetPassword(staff)">Reset Password</button>
           <button type="button" class="delete" (click)="deleteStaff(staff)">Delete</button>
         </td>
       </tr>
@@ -74,5 +114,3 @@
     No staff records found.
   </div>
 </div>
-
-

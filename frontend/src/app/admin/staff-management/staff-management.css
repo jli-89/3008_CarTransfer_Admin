@@ -1,4 +1,4 @@
-.staff-management-container {
+﻿.staff-management-container {
   width: 90%;
   margin: 20px auto;
   background: #fff;
@@ -24,21 +24,25 @@ h1 {
   margin-bottom: 20px;
 }
 
-.add-staff-form {
+.add-staff-form,
+.edit-staff-form {
   margin-bottom: 30px;
   padding: 20px;
   background: #f9f9f9;
   border-radius: 10px;
 }
 
-.add-staff-form label {
+.add-staff-form label,
+.edit-staff-form label {
   display: block;
   margin-top: 10px;
   font-weight: bold;
 }
 
 .add-staff-form input,
-.add-staff-form select {
+.add-staff-form select,
+.edit-staff-form input,
+.edit-staff-form select {
   width: 100%;
   padding: 10px;
   margin-top: 4px;
@@ -116,12 +120,17 @@ td button {
   cursor: pointer;
 }
 
-td button:first-child {
+td button.edit {
+  background: #6f42c1;
+  color: #fff;
+}
+
+td button.toggle {
   background: #ffc107;
   color: #000;
 }
 
-td button:nth-child(2) {
+td button.reset {
   background: #17a2b8;
   color: #fff;
 }
@@ -130,4 +139,3 @@ td button.delete {
   background: #dc3545;
   color: #fff;
 }
-

@@ -14,6 +14,7 @@ export interface StaffUser {
   real_name: string | null;
   email: string;
   status: StaffStatus;
+  office_location: string | null;
 }
 
 export interface CreateStaffPayload {
@@ -23,6 +24,16 @@ export interface CreateStaffPayload {
   email: string;
   real_name?: string | null;
   status?: StaffStatus;
+  office_location?: string | null;
+}
+
+export interface UpdateStaffPayload {
+  user_name: string;
+  user_group: StaffRole;
+  email: string;
+  real_name?: string | null;
+  status: StaffStatus;
+  office_location?: string | null;
 }
 
 interface ApiListUsersResponse {
@@ -73,6 +84,18 @@ export class StaffManagementService {
           }
 
           return res.user_id;
+        })
+      );
+  }
+
+  updateStaff(userId: number, payload: UpdateStaffPayload): Observable<void> {
+    return this.http
+      .put<ApiAffectResponse>(`${this.baseUrl}/${userId}`, payload)
+      .pipe(
+        map((res) => {
+          if (!res.ok) {
+            throw new Error(res.error || 'Failed to update staff record.');
+          }
         })
       );
   }
