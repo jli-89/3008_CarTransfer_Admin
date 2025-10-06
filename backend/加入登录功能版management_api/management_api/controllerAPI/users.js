@@ -1,3 +1,432 @@
+// const { getPool } = require("../database");
+// const bcrypt = require("bcryptjs");
+// const { signToken } = require("../middleware/auth");
+
+// // Toggle verbose auth logging with DEBUG_AUTH=1|true|yes|on
+// const DEBUG_AUTH = /^(1|true|yes|on)$/i.test(process.env.DEBUG_AUTH || "");
+// const d = (...args) => DEBUG_AUTH && console.log(...args);
+// const de = (...args) => DEBUG_AUTH && console.error(...args);
+
+// function validGroup(group) {
+//   return ["superadmin", "admin", "staff"].includes(group);
+// }
+
+// function validStatus(status) {
+//   return ["active", "inactive"].includes(status);
+// }
+
+// /**
+//  * POST /api/users
+//  * body: { user_name, password, user_group, email, real_name?, status?, office_location? }
+//  */
+// async function createUser(req, res) {
+//   const {
+//     user_name,
+//     password,
+//     user_group,
+//     email,
+//     real_name = null,
+//     status = "active",
+//     office_location = null,
+//   } = req.body || {};
+
+//   if (!user_name || !password || !user_group || !email) {
+//     return res.status(400).json({
+//       ok: false,
+//       error: "user_name, password, user_group, email are required",
+//     });
+//   }
+
+//   if (!validGroup(user_group)) {
+//     return res
+//       .status(400)
+//       .json({ ok: false, error: "user_group must be 'superadmin', 'admin' or 'staff'" });
+//   }
+
+//   if (!validStatus(status)) {
+//     return res
+//       .status(400)
+//       .json({ ok: false, error: "status must be 'active' or 'inactive'" });
+//   }
+
+//   try {
+//     const hash = await bcrypt.hash(password, 10);
+//     const normalizedRealName =
+//       typeof real_name === "string" && real_name.trim() ? real_name.trim() : null;
+//     const normalizedOffice =
+//       typeof office_location === "string" && office_location.trim() ? office_location.trim() : null;
+//     const conn = await getPool("orders").getConnection();
+
+//     try {
+//       const [result] = await conn.query(
+//         "INSERT INTO users (user_name, user_password, user_group, real_name, email, status, office_location) VALUES (?, ?, ?, ?, ?, ?, ?)",
+//         [user_name, hash, user_group, normalizedRealName, email, status, normalizedOffice]
+//       );
+
+//       res.json({ ok: true, user_id: result.insertId });
+//     } catch (err) {
+//       if (err && err.code === "ER_DUP_ENTRY") {
+//         return res.status(409).json({ ok: false, error: "email already exists" });
+//       }
+
+//       throw err;
+//     } finally {
+//       conn.release();
+//     }
+//   } catch (err) {
+//     res.status(500).json({ ok: false, error: err.message });
+//   }
+// }
+
+// /**
+//  * DELETE /api/users/:id
+//  */
+// async function deleteUser(req, res) {
+//   const userId = Number(req.params.id);
+
+//   if (!userId) {
+//     return res.status(400).json({ ok: false, error: "userId required" });
+//   }
+
+//   try {
+//     const conn = await getPool("orders").getConnection();
+
+//     try {
+//       const [[superadminCount]] = await conn.query(
+//         "SELECT COUNT(*) AS c FROM users WHERE user_group='superadmin'"
+//       );
+//       const [[target]] = await conn.query(
+//         "SELECT user_group FROM users WHERE user_id=?",
+//         [userId]
+//       );
+
+//       if (!target) {
+//         return res.status(404).json({ ok: false, error: "user not found" });
+//       }
+
+//       if (target.user_group === "superadmin" && superadminCount.c <= 1) {
+//         return res
+//           .status(400)
+//           .json({ ok: false, error: "cannot delete the last superadmin" });
+//       }
+
+//       const [result] = await conn.query("DELETE FROM users WHERE user_id=?", [
+//         userId,
+//       ]);
+
+//       res.json({ ok: true, affectedRows: result.affectedRows });
+//     } finally {
+//       conn.release();
+//     }
+//   } catch (err) {
+//     res.status(500).json({ ok: false, error: err.message });
+//   }
+// }
+
+// /**
+//  * POST /api/login
+//  * body: { login, password }
+//  */
+// async function login(req, res) {
+//   const { login, password } = req.body || {};
+
+//   if (!login || !password) {
+//     return res
+//       .status(400)
+//       .json({ ok: false, error: "login and password are required" });
+//   }
+
+//   try {
+//     const conn = await getPool("orders").getConnection();
+
+//     try {
+//       if (DEBUG_AUTH) {
+//         const [[db]] = await conn.query("SELECT DATABASE() AS db");
+//         d("[DB] using schema:", db.db);
+//       }
+
+//       const sql = `
+//         SELECT user_id, user_name, email, user_password, user_group,
+//                real_name, status, office_location
+//           FROM users
+//          WHERE user_name = ? OR email = ?
+//          LIMIT 1
+//       `;
+
+//       d("[SQL]", sql.trim(), "-- params:", [login, login]);
+
+//       const [[user]] = await conn.query(sql, [login, login]);
+//       d("[SQL] result keys:", user ? Object.keys(user) : user);
+
+//       if (!user) {
+//         return res
+//           .status(401)
+//           .json({ ok: false, error: "invalid credentials" });
+//       }
+
+//       if (user.status === "inactive") {
+//         return res
+//           .status(403)
+//           .json({ ok: false, error: "account inactive" });
+//       }
+
+//       const match = await bcrypt.compare(password, user.user_password);
+//       d("[LOGIN] password compare:", match);
+
+//       if (!match) {
+//         return res
+//           .status(401)
+//           .json({ ok: false, error: "invalid credentials" });
+//       }
+
+//       const token = signToken({ uid: user.user_id, role: user.user_group });
+//       delete user.user_password;
+
+//       res.json({
+//         ok: true,
+//         token,
+//         expires_in: 60 * 60 * 12,
+//         user,
+//       });
+//     } finally {
+//       conn.release();
+//     }
+//   } catch (err) {
+//     de("[LOGIN] error:", err);
+//     res.status(500).json({ ok: false, error: err.message });
+//   }
+// }
+
+// /**
+//  * PUT /api/users/:id
+//  * body: { user_name, user_group, email, real_name?, status?, office_location? }
+//  */
+// async function updateUser(req, res) {
+//   const userId = Number(req.params.id);
+//   const {
+//     user_name,
+//     user_group,
+//     email,
+//     real_name = null,
+//     status,
+//     office_location = null,
+//   } = req.body || {};
+
+//   if (!userId || !user_name || !user_group || !email || !status) {
+//     return res.status(400).json({
+//       ok: false,
+//       error: "userId, user_name, user_group, email and status are required",
+//     });
+//   }
+
+//   if (!validGroup(user_group)) {
+//     return res
+//       .status(400)
+//       .json({ ok: false, error: "user_group must be 'superadmin', 'admin' or 'staff'" });
+//   }
+
+//   if (!validStatus(status)) {
+//     return res
+//       .status(400)
+//       .json({ ok: false, error: "status must be 'active' or 'inactive'" });
+//   }
+
+//   const normalizedRealName =
+//     typeof real_name === "string" && real_name.trim() ? real_name.trim() : null;
+//   const normalizedOffice =
+//     typeof office_location === "string" && office_location.trim() ? office_location.trim() : null;
+
+//   try {
+//     const conn = await getPool("orders").getConnection();
+
+//     try {
+//       const [result] = await conn.query(
+//         "UPDATE users SET user_name=?, user_group=?, real_name=?, email=?, status=?, office_location=? WHERE user_id=?",
+//         [
+//           user_name,
+//           user_group,
+//           normalizedRealName,
+//           email,
+//           status,
+//           normalizedOffice,
+//           userId,
+//         ]
+//       );
+
+//       if (result.affectedRows === 0) {
+//         return res.status(404).json({ ok: false, error: "user not found" });
+//       }
+
+//       res.json({ ok: true, affectedRows: result.affectedRows });
+//     } catch (err) {
+//       if (err && err.code === "ER_DUP_ENTRY") {
+//         return res.status(409).json({ ok: false, error: "email already exists" });
+//       }
+
+//       throw err;
+//     } finally {
+//       conn.release();
+//     }
+//   } catch (err) {
+//     res.status(500).json({ ok: false, error: err.message });
+//   }
+// }
+
+// /**
+//  * PUT /api/users/:id/status
+//  * body: { status }
+//  */
+// async function updateStatus(req, res) {
+//   const userId = Number(req.params.id);
+//   const { status } = req.body || {};
+
+//   if (!userId || !status) {
+//     return res
+//       .status(400)
+//       .json({ ok: false, error: "userId and status are required" });
+//   }
+
+//   if (!validStatus(status)) {
+//     return res
+//       .status(400)
+//       .json({ ok: false, error: "status must be 'active' or 'inactive'" });
+//   }
+
+//   try {
+//     const conn = await getPool("orders").getConnection();
+
+//     try {
+//       const [result] = await conn.query(
+//         "UPDATE users SET status=? WHERE user_id=?",
+//         [status, userId]
+//       );
+
+//       res.json({ ok: true, affectedRows: result.affectedRows });
+//     } finally {
+//       conn.release();
+//     }
+//   } catch (err) {
+//     res.status(500).json({ ok: false, error: err.message });
+//   }
+// }
+
+// /**
+//  * PUT /api/users/:id/password
+//  * body: { password }
+//  */
+// async function resetPassword(req, res) {
+//   const userId = Number(req.params.id);
+//   const { password } = req.body || {};
+
+//   if (!userId || !password) {
+//     return res
+//       .status(400)
+//       .json({ ok: false, error: "userId and password are required" });
+//   }
+
+//   try {
+//     const hash = await bcrypt.hash(password, 10);
+//     const conn = await getPool("orders").getConnection();
+
+//     try {
+//       const [result] = await conn.query(
+//         "UPDATE users SET user_password=? WHERE user_id=?",
+//         [hash, userId]
+//       );
+
+//       res.json({ ok: true, affectedRows: result.affectedRows });
+//     } finally {
+//       conn.release();
+//     }
+//   } catch (err) {
+//     res.status(500).json({ ok: false, error: err.message });
+//   }
+// }
+
+// /**
+//  * GET /api/users
+//  */
+// async function listUsers(req, res) {
+//   try {
+//     const conn = await getPool("orders").getConnection();
+
+//     try {
+//       const [rows] = await conn.query(
+//         "SELECT user_id, user_name, user_group, real_name, email, status, office_location FROM users ORDER BY user_id ASC"
+//       );
+
+//       res.json({ ok: true, data: rows });
+//     } finally {
+//       conn.release();
+//     }
+//   } catch (err) {
+//     res.status(500).json({ ok: false, error: err.message });
+//   }
+// }
+
+// /**
+//  * GET /api/users/:id
+//  */
+// async function getUser(req, res) {
+//   const userId = Number(req.params.id);
+
+//   if (!userId) {
+//     return res.status(400).json({ ok: false, error: "userId required" });
+//   }
+
+//   try {
+//     const conn = await getPool("orders").getConnection();
+
+//     try {
+//       const [rows] = await conn.query(
+//         "SELECT user_id, user_name, user_group, real_name, email, status, office_location FROM users WHERE user_id=?",
+//         [userId]
+//       );
+
+//       if (rows.length === 0) {
+//         return res.status(404).json({ ok: false, error: "user not found" });
+//       }
+
+//       res.json({ ok: true, data: rows[0] });
+//     } finally {
+//       conn.release();
+//     }
+//   } catch (err) {
+//     res.status(500).json({ ok: false, error: err.message });
+//   }
+// }
+
+// const { logAccountAction } = require("../audit/audit-logger");
+
+// logAccountAction({
+//   actor_user_id: req.user?.user_id,     // 執行者
+//   target_user_id: Number(req.params.id),// 被操作對象
+//   operation: "UPDATE",                  // CREATE / READ / UPDATE / DELETE
+//   description: "admin update user profile",
+//   ip: (req.headers["x-forwarded-for"]||"").split(",")[0] || req.socket?.remoteAddress || "",
+//   ua: req.get("user-agent") || ""
+// })
+
+
+// module.exports = {
+//   createUser,
+//   deleteUser,
+//   login,
+//   updateUser,
+//   updateStatus,
+//   resetPassword,
+//   listUsers,
+//   getUser,
+// };
+
+
+
+
+
+
+
+
+
 const { getPool } = require("../database");
 const bcrypt = require("bcryptjs");
 const { signToken } = require("../middleware/auth");
@@ -5,7 +434,7 @@ const { logLoginAttempt, logAccountAction } = require("../audit/audit-logger");
 
 // Toggle verbose auth logging with DEBUG_AUTH=1|true|yes|on
 const DEBUG_AUTH = /^(1|true|yes|on)$/i.test(process.env.DEBUG_AUTH || "");
-const d = (...args) => DEBUG_AUTH && console.log(...args);
+const d  = (...args) => DEBUG_AUTH && console.log(...args);
 const de = (...args) => DEBUG_AUTH && console.error(...args);
 
 function validGroup(group) {
@@ -21,7 +450,6 @@ function validStatus(status) {
  * body: { user_name, password, user_group, email, real_name?, status?, office_location? }
  */
 async function createUser(req, res) {
-  const actorUserId = Number(req.jwt?.uid) || 0;
   const {
     user_name,
     password,
@@ -65,45 +493,35 @@ async function createUser(req, res) {
         [user_name, hash, user_group, normalizedRealName, email, status, normalizedOffice]
       );
 
-      await logAccountAction({
-        req,
-        actorUserId,
-        targetUserId: result.insertId,
-        crudOperation: 'CREATE',
-        description: `Created user ${user_name} (#${result.insertId})`,
-      });
+      // 審計：建立帳號
+      try {
+        await logAccountAction({
+          req,
+          actorUserId : Number(req.jwt?.uid) || 0,
+          targetUserId: Number(result.insertId) || null,
+          crudOperation: "CREATE",
+          description : `create user ${user_name}`,
+        });
+      } catch (e) { de("[AUDIT][createUser] err:", e); }
 
       res.json({ ok: true, user_id: result.insertId });
     } catch (err) {
       if (err && err.code === "ER_DUP_ENTRY") {
-        await logAccountAction({
-          req,
-          actorUserId,
-          crudOperation: 'CREATE',
-          description: `Failed to create user ${user_name}: duplicate email`,
-        });
         return res.status(409).json({ ok: false, error: "email already exists" });
       }
-
       throw err;
     } finally {
       conn.release();
     }
   } catch (err) {
-    await logAccountAction({
-      req,
-      actorUserId,
-      crudOperation: 'CREATE',
-      description: `Error creating user ${user_name}: ${err.message}`,
-    });
     res.status(500).json({ ok: false, error: err.message });
   }
 }
+
 /**
  * DELETE /api/users/:id
  */
 async function deleteUser(req, res) {
-  const actorUserId = Number(req.jwt?.uid) || 0;
   const userId = Number(req.params.id);
 
   if (!userId) {
@@ -118,71 +536,42 @@ async function deleteUser(req, res) {
         "SELECT COUNT(*) AS c FROM users WHERE user_group='superadmin'"
       );
       const [[target]] = await conn.query(
-        "SELECT user_group FROM users WHERE user_id=?",
+        "SELECT user_group, user_name FROM users WHERE user_id=?",
         [userId]
       );
 
       if (!target) {
-        await logAccountAction({
-          req,
-          actorUserId,
-          targetUserId: userId,
-          crudOperation: 'DELETE',
-          description: `Attempted to delete user ${userId} but user does not exist`,
-        });
         return res.status(404).json({ ok: false, error: "user not found" });
       }
 
       if (target.user_group === "superadmin" && superadminCount.c <= 1) {
-        await logAccountAction({
-          req,
-          actorUserId,
-          targetUserId: userId,
-          crudOperation: 'DELETE',
-          description: `Blocked deletion of the last superadmin (${userId})`,
-        });
         return res
           .status(400)
           .json({ ok: false, error: "cannot delete the last superadmin" });
       }
 
-      const [result] = await conn.query("DELETE FROM users WHERE user_id=?", [
-        userId,
-      ]);
+      const [result] = await conn.query("DELETE FROM users WHERE user_id=?", [userId]);
 
-      if (result.affectedRows === 0) {
+      // 審計：刪除帳號
+      try {
         await logAccountAction({
           req,
-          actorUserId,
+          actorUserId : Number(req.jwt?.uid) || 0,
           targetUserId: userId,
-          crudOperation: 'DELETE',
-          description: `Attempted to delete user ${userId} but no rows were affected`,
+          crudOperation: "DELETE",
+          description : `delete user ${target.user_name}`,
         });
-      } else {
-        await logAccountAction({
-          req,
-          actorUserId,
-          targetUserId: userId,
-          crudOperation: 'DELETE',
-          description: `Deleted user ${userId}`,
-        });
-      }
+      } catch (e) { de("[AUDIT][deleteUser] err:", e); }
 
       res.json({ ok: true, affectedRows: result.affectedRows });
     } finally {
       conn.release();
     }
   } catch (err) {
-    await logAccountAction({
-      req,
-      actorUserId,
-      targetUserId: userId,
-      crudOperation: 'DELETE',
-      description: `Error deleting user ${userId}: ${err.message}`,
-    });
     res.status(500).json({ ok: false, error: err.message });
   }
 }
+
 /**
  * POST /api/login
  * body: { login, password }
@@ -191,15 +580,7 @@ async function login(req, res) {
   const { login, password } = req.body || {};
 
   if (!login || !password) {
-    await logLoginAttempt({
-      req,
-      actorUserId: 0,
-      success: false,
-      description: 'Login attempt with missing credentials',
-    });
-    return res
-      .status(400)
-      .json({ ok: false, error: "login and password are required" });
+    return res.status(400).json({ ok: false, error: "login and password are required" });
   }
 
   try {
@@ -225,53 +606,58 @@ async function login(req, res) {
       d("[SQL] result keys:", user ? Object.keys(user) : user);
 
       if (!user) {
-        await logLoginAttempt({
-          req,
-          actorUserId: 0,
-          success: false,
-          description: `Login failed for \"${login}\": user not found`,
-        });
-        return res
-          .status(401)
-          .json({ ok: false, error: "invalid credentials" });
+        try {
+          await logLoginAttempt({
+            req,
+            actorUserId: 0,
+            success: false,
+            description: "invalid credentials (user not found)",
+          });
+        } catch (e) { de("[AUDIT][login:!user] err:", e); }
+
+        return res.status(401).json({ ok: false, error: "invalid credentials" });
       }
 
       if (user.status === "inactive") {
-        await logLoginAttempt({
-          req,
-          actorUserId: user.user_id,
-          success: false,
-          description: `Login rejected for inactive account ${user.user_id}`,
-        });
-        return res
-          .status(403)
-          .json({ ok: false, error: "account inactive" });
+        try {
+          await logLoginAttempt({
+            req,
+            actorUserId: Number(user.user_id) || 0,
+            success: false,
+            description: "account inactive",
+          });
+        } catch (e) { de("[AUDIT][login:inactive] err:", e); }
+
+        return res.status(403).json({ ok: false, error: "account inactive" });
       }
 
       const match = await bcrypt.compare(password, user.user_password);
       d("[LOGIN] password compare:", match);
 
       if (!match) {
-        await logLoginAttempt({
-          req,
-          actorUserId: user.user_id,
-          success: false,
-          description: `Login failed for user_id ${user.user_id}: incorrect password`,
-        });
-        return res
-          .status(401)
-          .json({ ok: false, error: "invalid credentials" });
+        try {
+          await logLoginAttempt({
+            req,
+            actorUserId: Number(user.user_id) || 0,
+            success: false,
+            description: "invalid credentials (password mismatch)",
+          });
+        } catch (e) { de("[AUDIT][login:badpass] err:", e); }
+
+        return res.status(401).json({ ok: false, error: "invalid credentials" });
       }
 
       const token = signToken({ uid: user.user_id, role: user.user_group });
       delete user.user_password;
 
-      await logLoginAttempt({
-        req,
-        actorUserId: user.user_id,
-        success: true,
-        description: `Login success for user_id ${user.user_id}`,
-      });
+      try {
+        await logLoginAttempt({
+          req,
+          actorUserId: Number(user.user_id) || 0,
+          success: true,
+          description: "login ok",
+        });
+      } catch (e) { de("[AUDIT][login:ok] err:", e); }
 
       res.json({
         ok: true,
@@ -284,21 +670,15 @@ async function login(req, res) {
     }
   } catch (err) {
     de("[LOGIN] error:", err);
-    await logLoginAttempt({
-      req,
-      actorUserId: 0,
-      success: false,
-      description: `Login error for \"${login}\": ${err.message}`,
-    });
     res.status(500).json({ ok: false, error: err.message });
   }
 }
+
 /**
  * PUT /api/users/:id
  * body: { user_name, user_group, email, real_name?, status?, office_location? }
  */
 async function updateUser(req, res) {
-  const actorUserId = Number(req.jwt?.uid) || 0;
   const userId = Number(req.params.id);
   const {
     user_name,
@@ -351,52 +731,44 @@ async function updateUser(req, res) {
       );
 
       if (result.affectedRows === 0) {
-        await logAccountAction({
-          req,
-          actorUserId,
-          targetUserId: userId,
-          crudOperation: 'UPDATE',
-          description: `Attempted to update user ${userId} but user not found`,
-        });
         return res.status(404).json({ ok: false, error: "user not found" });
       }
 
-      await logAccountAction({
-        req,
-        actorUserId,
-        targetUserId: userId,
-        crudOperation: 'UPDATE',
-        description: `Updated user ${userId}`,
-      });
+      // 審計：更新帳號
+      try {
+        await logAccountAction({
+          req,
+          actorUserId : Number(req.jwt?.uid) || 0,
+          targetUserId: userId,
+          crudOperation: "UPDATE",
+          description : `update user ${user_name}`,
+        });
+      } catch (e) { de("[AUDIT][updateUser] err:", e); }
 
       res.json({ ok: true, affectedRows: result.affectedRows });
+    } catch (err) {
+      if (err && err.code === "ER_DUP_ENTRY") {
+        return res.status(409).json({ ok: false, error: "email already exists" });
+      }
+      throw err;
     } finally {
       conn.release();
     }
   } catch (err) {
-    await logAccountAction({
-      req,
-      actorUserId,
-      targetUserId: userId,
-      crudOperation: 'UPDATE',
-      description: `Error updating user ${userId}: ${err.message}`,
-    });
     res.status(500).json({ ok: false, error: err.message });
   }
 }
+
 /**
  * PUT /api/users/:id/status
  * body: { status }
  */
 async function updateStatus(req, res) {
-  const actorUserId = Number(req.jwt?.uid) || 0;
   const userId = Number(req.params.id);
   const { status } = req.body || {};
 
   if (!userId || !status) {
-    return res
-      .status(400)
-      .json({ ok: false, error: "userId and status are required" });
+    return res.status(400).json({ ok: false, error: "userId and status are required" });
   }
 
   if (!validStatus(status)) {
@@ -414,53 +786,36 @@ async function updateStatus(req, res) {
         [status, userId]
       );
 
-      if (result.affectedRows === 0) {
+      // 審計：更新帳號狀態
+      try {
         await logAccountAction({
           req,
-          actorUserId,
+          actorUserId : Number(req.jwt?.uid) || 0,
           targetUserId: userId,
-          crudOperation: 'UPDATE',
-          description: `Attempted to update status for user ${userId} but user not found`,
+          crudOperation: "UPDATE",
+          description : `update user status -> ${status}`,
         });
-        return res.status(404).json({ ok: false, error: "user not found" });
-      }
-
-      await logAccountAction({
-        req,
-        actorUserId,
-        targetUserId: userId,
-        crudOperation: 'UPDATE',
-        description: `Updated status to ${status} for user ${userId}`,
-      });
+      } catch (e) { de("[AUDIT][updateStatus] err:", e); }
 
       res.json({ ok: true, affectedRows: result.affectedRows });
     } finally {
       conn.release();
     }
   } catch (err) {
-    await logAccountAction({
-      req,
-      actorUserId,
-      targetUserId: userId,
-      crudOperation: 'UPDATE',
-      description: `Error updating status for user ${userId}: ${err.message}`,
-    });
     res.status(500).json({ ok: false, error: err.message });
   }
 }
+
 /**
  * PUT /api/users/:id/password
  * body: { password }
  */
 async function resetPassword(req, res) {
-  const actorUserId = Number(req.jwt?.uid) || 0;
   const userId = Number(req.params.id);
   const { password } = req.body || {};
 
   if (!userId || !password) {
-    return res
-      .status(400)
-      .json({ ok: false, error: "userId and password are required" });
+    return res.status(400).json({ ok: false, error: "userId and password are required" });
   }
 
   try {
@@ -473,40 +828,26 @@ async function resetPassword(req, res) {
         [hash, userId]
       );
 
-      if (result.affectedRows === 0) {
+      // 審計：重設密碼
+      try {
         await logAccountAction({
           req,
-          actorUserId,
+          actorUserId : Number(req.jwt?.uid) || 0,
           targetUserId: userId,
-          crudOperation: 'UPDATE',
-          description: `Attempted to reset password for user ${userId} but user not found`,
+          crudOperation: "UPDATE",
+          description : "reset user password",
         });
-        return res.status(404).json({ ok: false, error: "user not found" });
-      }
-
-      await logAccountAction({
-        req,
-        actorUserId,
-        targetUserId: userId,
-        crudOperation: 'UPDATE',
-        description: `Reset password for user ${userId}`,
-      });
+      } catch (e) { de("[AUDIT][resetPassword] err:", e); }
 
       res.json({ ok: true, affectedRows: result.affectedRows });
     } finally {
       conn.release();
     }
   } catch (err) {
-    await logAccountAction({
-      req,
-      actorUserId,
-      targetUserId: userId,
-      crudOperation: 'UPDATE',
-      description: `Error resetting password for user ${userId}: ${err.message}`,
-    });
     res.status(500).json({ ok: false, error: err.message });
   }
 }
+
 /**
  * GET /api/users
  */
@@ -518,6 +859,9 @@ async function listUsers(req, res) {
       const [rows] = await conn.query(
         "SELECT user_id, user_name, user_group, real_name, email, status, office_location FROM users ORDER BY user_id ASC"
       );
+
+      // （可選）審計：READ 列表（通常不記）
+      // await logAccountAction({ req, actorUserId: Number(req.jwt?.uid)||0, crudOperation: "READ", description: "list users" });
 
       res.json({ ok: true, data: rows });
     } finally {
@@ -551,6 +895,9 @@ async function getUser(req, res) {
         return res.status(404).json({ ok: false, error: "user not found" });
       }
 
+      // （可選）審計：READ 單筆（通常不記）
+      // await logAccountAction({ req, actorUserId: Number(req.jwt?.uid)||0, targetUserId: userId, crudOperation: "READ", description: "get user" });
+
       res.json({ ok: true, data: rows[0] });
     } finally {
       conn.release();
@@ -570,4 +917,3 @@ module.exports = {
   listUsers,
   getUser,
 };
-

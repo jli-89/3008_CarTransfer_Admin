@@ -61,16 +61,16 @@ async function insertAuditRecord({
     const conn = await auditPool.getConnection();
     try {
       await conn.query(
-        INSERT INTO audit_log (
-          event_type,
-          actor_user_id,
-          target_user_id,
-          crud_operation,
-          action_description,
-          login_success,
-          ip_address,
-          user_agent
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?),
+        `INSERT INTO audit_log (
+            event_type,
+            actor_user_id,
+            target_user_id,
+            crud_operation,
+            action_description,
+            login_success,
+            ip_address,
+            user_agent
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           entry.eventType,
           entry.actorUserId,
