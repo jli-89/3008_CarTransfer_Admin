@@ -1,4 +1,5 @@
-﻿import { Component, OnInit } from '@angular/core';
+﻿// app/admin/staff-management/staff-management.ts
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
@@ -54,6 +55,9 @@ export class StaffManagementComponent implements OnInit {
   isUpdating = false;
   errorMessage: string | null = null;
 
+  /** 是否只顯示離職（former employees） */
+  showFormerOnly = false;
+
   newStaff: StaffFormState = this.createEmptyForm();
 
   editingStaffId: number | null = null;
@@ -63,6 +67,14 @@ export class StaffManagementComponent implements OnInit {
 
   ngOnInit(): void {
     this.fetchStaff();
+  }
+
+  /** 依照 showFormerOnly 過濾清單 */
+  filteredStaffList(): StaffRow[] {
+    return this.staffList.filter(row =>
+      this.showFormerOnly ? row.role === 'former employees'
+                          : row.role !== 'former employees'
+    );
   }
 
   openAddStaffForm(): void {
@@ -246,6 +258,30 @@ export class StaffManagementComponent implements OnInit {
     });
   }
 
+  /** 新增：標記離職 */
+  markAsFormer(staff: StaffRow): void {
+    this.errorMessage = null;
+    this.isUpdating = true;
+
+    this.staffService
+      .markAsFormer(staff.id)
+      .pipe(finalize(() => (this.isUpdating = false)))
+      .subscribe({
+        next: () => {
+          this.staffList = this.staffList.map((row) =>
+            row.id === staff.id ? { ...row, role: 'former employees' } : row
+          );
+
+          if (this.editingStaffId === staff.id && this.editStaff) {
+            this.editStaff.role = 'former employees';
+          }
+        },
+        error: (error) => {
+          this.errorMessage = this.toErrorMessage(error, 'Failed to mark as former.');
+        }
+      });
+  }
+
   deleteStaff(staff: StaffRow): void {
     if (!confirm(`Are you sure you want to delete ${staff.name || staff.username}?`)) {
       return;
@@ -311,7 +347,8 @@ export class StaffManagementComponent implements OnInit {
   }
 
   private isValidRole(role: string): role is StaffRole {
-    return role === 'staff' || role === 'admin' || role === 'superadmin';
+    //return role === 'staff' || role === 'admin' || role === 'superadmin';
+    return role === 'staff' || role === 'admin' || role === 'superadmin' || role === 'former employees';// v2.1.1 新增 former employees 在v2.1.0之後增加
   }
 
   private isValidStatus(status: string): status is StaffStatus {
