@@ -27,4 +27,30 @@ function verifyToken(req, res, next) {
   }
 }
 
+const { logLogin } = require("../audit/audit-logger");
+
+function clientIp(req) {
+  const xf = req.headers["x-forwarded-for"];
+  return (xf && xf.split(",")[0].trim()) || req.socket?.remoteAddress || "";
+}
+
+// 驗證失敗時（例）
+logLogin({
+  actor_user_id: userIdOr0,             // 若能辨識，填用戶ID；否則 0
+  success: false,
+  ip: clientIp(req),
+  ua: req.get("user-agent") || "",
+  description: "invalid credentials"
+});
+
+// 驗證成功時（例）
+logLogin({
+  actor_user_id: user.user_id,
+  success: true,
+  ip: clientIp(req),
+  ua: req.get("user-agent") || "",
+  description: "login ok"
+});
+
+
 module.exports = { signToken, verifyToken };

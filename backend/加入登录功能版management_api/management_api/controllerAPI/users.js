@@ -1,6 +1,7 @@
 const { getPool } = require("../database");
 const bcrypt = require("bcryptjs");
 const { signToken } = require("../middleware/auth");
+const { logLoginAttempt, logAccountAction } = require("../audit/audit-logger");
 
 // Toggle verbose auth logging with DEBUG_AUTH=1|true|yes|on
 const DEBUG_AUTH = /^(1|true|yes|on)$/i.test(process.env.DEBUG_AUTH || "");
@@ -20,6 +21,7 @@ function validStatus(status) {
  * body: { user_name, password, user_group, email, real_name?, status?, office_location? }
  */
 async function createUser(req, res) {
+  const actorUserId = Number(req.jwt?.uid) || 0;
   const {
     user_name,
     password,
@@ -63,9 +65,23 @@ async function createUser(req, res) {
         [user_name, hash, user_group, normalizedRealName, email, status, normalizedOffice]
       );
 
+      await logAccountAction({
+        req,
+        actorUserId,
+        targetUserId: result.insertId,
+        crudOperation: 'CREATE',
+        description: `Created user ${user_name} (#${result.insertId})`,
+      });
+
       res.json({ ok: true, user_id: result.insertId });
     } catch (err) {
       if (err && err.code === "ER_DUP_ENTRY") {
+        await logAccountAction({
+          req,
+          actorUserId,
+          crudOperation: 'CREATE',
+          description: `Failed to create user ${user_name}: duplicate email`,
+        });
         return res.status(409).json({ ok: false, error: "email already exists" });
       }
 
@@ -74,14 +90,20 @@ async function createUser(req, res) {
       conn.release();
     }
   } catch (err) {
+    await logAccountAction({
+      req,
+      actorUserId,
+      crudOperation: 'CREATE',
+      description: `Error creating user ${user_name}: ${err.message}`,
+    });
     res.status(500).json({ ok: false, error: err.message });
   }
 }
-
 /**
  * DELETE /api/users/:id
  */
 async function deleteUser(req, res) {
+  const actorUserId = Number(req.jwt?.uid) || 0;
   const userId = Number(req.params.id);
 
   if (!userId) {
@@ -101,10 +123,24 @@ async function deleteUser(req, res) {
       );
 
       if (!target) {
+        await logAccountAction({
+          req,
+          actorUserId,
+          targetUserId: userId,
+          crudOperation: 'DELETE',
+          description: `Attempted to delete user ${userId} but user does not exist`,
+        });
         return res.status(404).json({ ok: false, error: "user not found" });
       }
 
       if (target.user_group === "superadmin" && superadminCount.c <= 1) {
+        await logAccountAction({
+          req,
+          actorUserId,
+          targetUserId: userId,
+          crudOperation: 'DELETE',
+          description: `Blocked deletion of the last superadmin (${userId})`,
+        });
         return res
           .status(400)
           .json({ ok: false, error: "cannot delete the last superadmin" });
@@ -114,15 +150,39 @@ async function deleteUser(req, res) {
         userId,
       ]);
 
+      if (result.affectedRows === 0) {
+        await logAccountAction({
+          req,
+          actorUserId,
+          targetUserId: userId,
+          crudOperation: 'DELETE',
+          description: `Attempted to delete user ${userId} but no rows were affected`,
+        });
+      } else {
+        await logAccountAction({
+          req,
+          actorUserId,
+          targetUserId: userId,
+          crudOperation: 'DELETE',
+          description: `Deleted user ${userId}`,
+        });
+      }
+
       res.json({ ok: true, affectedRows: result.affectedRows });
     } finally {
       conn.release();
     }
   } catch (err) {
+    await logAccountAction({
+      req,
+      actorUserId,
+      targetUserId: userId,
+      crudOperation: 'DELETE',
+      description: `Error deleting user ${userId}: ${err.message}`,
+    });
     res.status(500).json({ ok: false, error: err.message });
   }
 }
-
 /**
  * POST /api/login
  * body: { login, password }
@@ -131,6 +191,12 @@ async function login(req, res) {
   const { login, password } = req.body || {};
 
   if (!login || !password) {
+    await logLoginAttempt({
+      req,
+      actorUserId: 0,
+      success: false,
+      description: 'Login attempt with missing credentials',
+    });
     return res
       .status(400)
       .json({ ok: false, error: "login and password are required" });
@@ -159,12 +225,24 @@ async function login(req, res) {
       d("[SQL] result keys:", user ? Object.keys(user) : user);
 
       if (!user) {
+        await logLoginAttempt({
+          req,
+          actorUserId: 0,
+          success: false,
+          description: `Login failed for \"${login}\": user not found`,
+        });
         return res
           .status(401)
           .json({ ok: false, error: "invalid credentials" });
       }
 
       if (user.status === "inactive") {
+        await logLoginAttempt({
+          req,
+          actorUserId: user.user_id,
+          success: false,
+          description: `Login rejected for inactive account ${user.user_id}`,
+        });
         return res
           .status(403)
           .json({ ok: false, error: "account inactive" });
@@ -174,6 +252,12 @@ async function login(req, res) {
       d("[LOGIN] password compare:", match);
 
       if (!match) {
+        await logLoginAttempt({
+          req,
+          actorUserId: user.user_id,
+          success: false,
+          description: `Login failed for user_id ${user.user_id}: incorrect password`,
+        });
         return res
           .status(401)
           .json({ ok: false, error: "invalid credentials" });
@@ -181,6 +265,13 @@ async function login(req, res) {
 
       const token = signToken({ uid: user.user_id, role: user.user_group });
       delete user.user_password;
+
+      await logLoginAttempt({
+        req,
+        actorUserId: user.user_id,
+        success: true,
+        description: `Login success for user_id ${user.user_id}`,
+      });
 
       res.json({
         ok: true,
@@ -193,15 +284,21 @@ async function login(req, res) {
     }
   } catch (err) {
     de("[LOGIN] error:", err);
+    await logLoginAttempt({
+      req,
+      actorUserId: 0,
+      success: false,
+      description: `Login error for \"${login}\": ${err.message}`,
+    });
     res.status(500).json({ ok: false, error: err.message });
   }
 }
-
 /**
  * PUT /api/users/:id
  * body: { user_name, user_group, email, real_name?, status?, office_location? }
  */
 async function updateUser(req, res) {
+  const actorUserId = Number(req.jwt?.uid) || 0;
   const userId = Number(req.params.id);
   const {
     user_name,
@@ -254,29 +351,45 @@ async function updateUser(req, res) {
       );
 
       if (result.affectedRows === 0) {
+        await logAccountAction({
+          req,
+          actorUserId,
+          targetUserId: userId,
+          crudOperation: 'UPDATE',
+          description: `Attempted to update user ${userId} but user not found`,
+        });
         return res.status(404).json({ ok: false, error: "user not found" });
       }
 
-      res.json({ ok: true, affectedRows: result.affectedRows });
-    } catch (err) {
-      if (err && err.code === "ER_DUP_ENTRY") {
-        return res.status(409).json({ ok: false, error: "email already exists" });
-      }
+      await logAccountAction({
+        req,
+        actorUserId,
+        targetUserId: userId,
+        crudOperation: 'UPDATE',
+        description: `Updated user ${userId}`,
+      });
 
-      throw err;
+      res.json({ ok: true, affectedRows: result.affectedRows });
     } finally {
       conn.release();
     }
   } catch (err) {
+    await logAccountAction({
+      req,
+      actorUserId,
+      targetUserId: userId,
+      crudOperation: 'UPDATE',
+      description: `Error updating user ${userId}: ${err.message}`,
+    });
     res.status(500).json({ ok: false, error: err.message });
   }
 }
-
 /**
  * PUT /api/users/:id/status
  * body: { status }
  */
 async function updateStatus(req, res) {
+  const actorUserId = Number(req.jwt?.uid) || 0;
   const userId = Number(req.params.id);
   const { status } = req.body || {};
 
@@ -301,20 +414,46 @@ async function updateStatus(req, res) {
         [status, userId]
       );
 
+      if (result.affectedRows === 0) {
+        await logAccountAction({
+          req,
+          actorUserId,
+          targetUserId: userId,
+          crudOperation: 'UPDATE',
+          description: `Attempted to update status for user ${userId} but user not found`,
+        });
+        return res.status(404).json({ ok: false, error: "user not found" });
+      }
+
+      await logAccountAction({
+        req,
+        actorUserId,
+        targetUserId: userId,
+        crudOperation: 'UPDATE',
+        description: `Updated status to ${status} for user ${userId}`,
+      });
+
       res.json({ ok: true, affectedRows: result.affectedRows });
     } finally {
       conn.release();
     }
   } catch (err) {
+    await logAccountAction({
+      req,
+      actorUserId,
+      targetUserId: userId,
+      crudOperation: 'UPDATE',
+      description: `Error updating status for user ${userId}: ${err.message}`,
+    });
     res.status(500).json({ ok: false, error: err.message });
   }
 }
-
 /**
  * PUT /api/users/:id/password
  * body: { password }
  */
 async function resetPassword(req, res) {
+  const actorUserId = Number(req.jwt?.uid) || 0;
   const userId = Number(req.params.id);
   const { password } = req.body || {};
 
@@ -334,15 +473,40 @@ async function resetPassword(req, res) {
         [hash, userId]
       );
 
+      if (result.affectedRows === 0) {
+        await logAccountAction({
+          req,
+          actorUserId,
+          targetUserId: userId,
+          crudOperation: 'UPDATE',
+          description: `Attempted to reset password for user ${userId} but user not found`,
+        });
+        return res.status(404).json({ ok: false, error: "user not found" });
+      }
+
+      await logAccountAction({
+        req,
+        actorUserId,
+        targetUserId: userId,
+        crudOperation: 'UPDATE',
+        description: `Reset password for user ${userId}`,
+      });
+
       res.json({ ok: true, affectedRows: result.affectedRows });
     } finally {
       conn.release();
     }
   } catch (err) {
+    await logAccountAction({
+      req,
+      actorUserId,
+      targetUserId: userId,
+      crudOperation: 'UPDATE',
+      description: `Error resetting password for user ${userId}: ${err.message}`,
+    });
     res.status(500).json({ ok: false, error: err.message });
   }
 }
-
 /**
  * GET /api/users
  */
