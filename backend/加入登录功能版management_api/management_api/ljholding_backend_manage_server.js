@@ -280,6 +280,7 @@ r.put("/api/quotes/locations", Quotes.updateLocation);
 // users
 r.post("/api/users", Users.createUser);
 r.delete("/api/users/:id", Users.deleteUser);
+r.put("/api/users/:id", Users.updateUser);
 r.put("/api/users/:id/status", Users.updateStatus);
 r.put("/api/users/:id/password", Users.resetPassword);
 r.get("/api/users", Users.listUsers);

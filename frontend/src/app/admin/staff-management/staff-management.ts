@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
@@ -13,10 +13,12 @@ import {
 interface StaffRow {
   id: number;
   name: string;
+  realName: string | null;
   email: string;
   role: StaffRole;
   username: string;
   status: StaffStatus;
+  officeLocation: string | null;
 }
 
 interface StaffFormState {
@@ -25,6 +27,16 @@ interface StaffFormState {
   role: StaffRole;
   username: string;
   password: string;
+  officeLocation: string;
+}
+
+interface StaffEditFormState {
+  name: string;
+  email: string;
+  role: StaffRole;
+  username: string;
+  status: StaffStatus;
+  officeLocation: string;
 }
 
 @Component({
@@ -39,9 +51,13 @@ export class StaffManagementComponent implements OnInit {
   showAddForm = false;
   isLoading = false;
   isSaving = false;
+  isUpdating = false;
   errorMessage: string | null = null;
 
   newStaff: StaffFormState = this.createEmptyForm();
+
+  editingStaffId: number | null = null;
+  editStaff: StaffEditFormState | null = null;
 
   constructor(private staffService: StaffManagementService) {}
 
@@ -50,6 +66,7 @@ export class StaffManagementComponent implements OnInit {
   }
 
   openAddStaffForm(): void {
+    this.cancelEditStaff();
     this.showAddForm = true;
     this.newStaff = this.createEmptyForm();
     this.errorMessage = null;
@@ -66,6 +83,7 @@ export class StaffManagementComponent implements OnInit {
     const trimmedName = this.newStaff.name.trim();
     const trimmedEmail = this.newStaff.email.trim();
     const trimmedUsername = this.newStaff.username.trim();
+    const trimmedOffice = this.newStaff.officeLocation.trim();
     const password = this.newStaff.password;
 
     if (!trimmedName || !trimmedEmail || !trimmedUsername || !password) {
@@ -88,7 +106,8 @@ export class StaffManagementComponent implements OnInit {
         user_group: role,
         email: trimmedEmail,
         real_name: trimmedName,
-        status: 'active'
+        status: 'active',
+        office_location: trimmedOffice ? trimmedOffice : null
       })
       .pipe(finalize(() => (this.isSaving = false)))
       .subscribe({
@@ -103,6 +122,92 @@ export class StaffManagementComponent implements OnInit {
       });
   }
 
+  openEditStaff(staff: StaffRow): void {
+    this.errorMessage = null;
+    this.editingStaffId = staff.id;
+    this.editStaff = {
+      name: staff.realName || '',
+      email: staff.email,
+      role: staff.role,
+      username: staff.username,
+      status: staff.status,
+      officeLocation: staff.officeLocation || ''
+    };
+  }
+
+  cancelEditStaff(): void {
+    this.editingStaffId = null;
+    this.editStaff = null;
+  }
+
+  saveEditStaff(): void {
+    if (this.editingStaffId === null || !this.editStaff) {
+      return;
+    }
+
+    this.errorMessage = null;
+
+    const trimmedName = this.editStaff.name.trim();
+    const trimmedEmail = this.editStaff.email.trim();
+    const trimmedUsername = this.editStaff.username.trim();
+    const trimmedOffice = this.editStaff.officeLocation.trim();
+    const role = this.editStaff.role;
+    const status = this.editStaff.status;
+
+    if (!trimmedEmail || !trimmedUsername) {
+      this.errorMessage = 'Email and username are required.';
+      return;
+    }
+
+    if (!this.isValidRole(role)) {
+      this.errorMessage = 'Role must be admin, staff, or superadmin.';
+      return;
+    }
+
+    if (!this.isValidStatus(status)) {
+      this.errorMessage = 'Status must be active or inactive.';
+      return;
+    }
+
+    const normalizedRealName = trimmedName || null;
+    const normalizedOffice = trimmedOffice || null;
+
+    this.isUpdating = true;
+
+    this.staffService
+      .updateStaff(this.editingStaffId, {
+        user_name: trimmedUsername,
+        user_group: role,
+        email: trimmedEmail,
+        real_name: normalizedRealName,
+        status,
+        office_location: normalizedOffice
+      })
+      .pipe(finalize(() => (this.isUpdating = false)))
+      .subscribe({
+        next: () => {
+          this.staffList = this.staffList.map((row) =>
+            row.id === this.editingStaffId
+              ? {
+                  ...row,
+                  name: normalizedRealName || trimmedUsername,
+                  realName: normalizedRealName,
+                  email: trimmedEmail,
+                  role,
+                  username: trimmedUsername,
+                  status,
+                  officeLocation: normalizedOffice
+                }
+              : row
+          );
+          this.cancelEditStaff();
+        },
+        error: (error) => {
+          this.errorMessage = this.toErrorMessage(error, 'Failed to update staff member.');
+        }
+      });
+  }
+
   toggleStatus(staff: StaffRow): void {
     const nextStatus: StaffStatus = staff.status === 'active' ? 'inactive' : 'active';
     this.errorMessage = null;
@@ -112,6 +217,10 @@ export class StaffManagementComponent implements OnInit {
         this.staffList = this.staffList.map((s) =>
           s.id === staff.id ? { ...s, status: nextStatus } : s
         );
+
+        if (this.editingStaffId === staff.id && this.editStaff) {
+          this.editStaff.status = nextStatus;
+        }
       },
       error: (error) => {
         this.errorMessage = this.toErrorMessage(error, 'Failed to update staff status.');
@@ -147,6 +256,9 @@ export class StaffManagementComponent implements OnInit {
     this.staffService.deleteStaff(staff.id).subscribe({
       next: () => {
         this.staffList = this.staffList.filter((s) => s.id !== staff.id);
+        if (this.editingStaffId === staff.id) {
+          this.cancelEditStaff();
+        }
       },
       error: (error) => {
         this.errorMessage = this.toErrorMessage(error, 'Failed to delete staff member.');
@@ -172,13 +284,18 @@ export class StaffManagementComponent implements OnInit {
   }
 
   private mapUserToRow(user: StaffUser): StaffRow {
+    const realName = user.real_name?.trim() || null;
+    const officeLocation = user.office_location?.trim() || null;
+
     return {
       id: user.user_id,
-      name: user.real_name?.trim() || user.user_name,
+      name: realName || user.user_name,
+      realName,
       email: user.email,
       role: user.user_group,
       username: user.user_name,
-      status: user.status
+      status: user.status,
+      officeLocation
     };
   }
 
@@ -188,12 +305,17 @@ export class StaffManagementComponent implements OnInit {
       email: '',
       role: 'staff',
       username: '',
-      password: ''
+      password: '',
+      officeLocation: ''
     };
   }
 
   private isValidRole(role: string): role is StaffRole {
     return role === 'staff' || role === 'admin' || role === 'superadmin';
+  }
+
+  private isValidStatus(status: string): status is StaffStatus {
+    return status === 'active' || status === 'inactive';
   }
 
   private toErrorMessage(error: unknown, fallback: string): string {
@@ -218,4 +340,3 @@ export class StaffManagementComponent implements OnInit {
     return fallback;
   }
 }
-
