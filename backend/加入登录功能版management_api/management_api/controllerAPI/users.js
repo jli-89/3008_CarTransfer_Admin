@@ -1517,7 +1517,7 @@ async function getUser(req, res) {
 
 module.exports = {
   createUser,
-  deleteUser,
+  deleteUser,   // 保留删除功能但前端隐藏按钮 v2.1.1 修改于 v2.1.0之後
   login,
   updateUser,
   updateStatus,
