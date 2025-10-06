@@ -1,10 +1,12 @@
+// app/admin/staff-management/staff-management.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
-export type StaffRole = 'superadmin' | 'admin' | 'staff';
+//export type StaffRole = 'superadmin' | 'admin' | 'staff';
+export type StaffRole = 'superadmin' | 'admin' | 'staff' | 'former employees';  // v2.1.1
 export type StaffStatus = 'active' | 'inactive';
 
 export interface StaffUser {
@@ -64,11 +66,10 @@ export class StaffManagementService {
     return this.http
       .get<ApiListUsersResponse>(this.baseUrl)
       .pipe(
-        map((res) => {
+        map((res: ApiListUsersResponse) => {
           if (!res.ok) {
-            throw new Error(res.error || 'Failed to load staff list.');
+            throw new Error(res.error ?? 'Failed to load staff list.');
           }
-
           return res.data ?? [];
         })
       );
@@ -78,11 +79,10 @@ export class StaffManagementService {
     return this.http
       .post<ApiCreateUserResponse>(this.baseUrl, payload)
       .pipe(
-        map((res) => {
+        map((res: ApiCreateUserResponse) => {
           if (!res.ok || typeof res.user_id !== 'number') {
-            throw new Error(res.error || 'Failed to create staff record.');
+            throw new Error(res.error ?? 'Failed to create staff record.');
           }
-
           return res.user_id;
         })
       );
@@ -92,9 +92,9 @@ export class StaffManagementService {
     return this.http
       .put<ApiAffectResponse>(`${this.baseUrl}/${userId}`, payload)
       .pipe(
-        map((res) => {
+        map((res: ApiAffectResponse) => {
           if (!res.ok) {
-            throw new Error(res.error || 'Failed to update staff record.');
+            throw new Error(res.error ?? 'Failed to update staff record.');
           }
         })
       );
@@ -104,9 +104,9 @@ export class StaffManagementService {
     return this.http
       .put<ApiAffectResponse>(`${this.baseUrl}/${userId}/status`, { status })
       .pipe(
-        map((res) => {
+        map((res: ApiAffectResponse) => {
           if (!res.ok) {
-            throw new Error(res.error || 'Failed to update staff status.');
+            throw new Error(res.error ?? 'Failed to update staff status.');
           }
         })
       );
@@ -116,9 +116,9 @@ export class StaffManagementService {
     return this.http
       .put<ApiAffectResponse>(`${this.baseUrl}/${userId}/password`, { password })
       .pipe(
-        map((res) => {
+        map((res: ApiAffectResponse) => {
           if (!res.ok) {
-            throw new Error(res.error || 'Failed to reset password.');
+            throw new Error(res.error ?? 'Failed to reset password.');
           }
         })
       );
@@ -128,12 +128,24 @@ export class StaffManagementService {
     return this.http
       .delete<ApiAffectResponse>(`${this.baseUrl}/${userId}`)
       .pipe(
-        map((res) => {
+        map((res: ApiAffectResponse) => {
           if (!res.ok) {
-            throw new Error(res.error || 'Failed to delete staff.');
+            throw new Error(res.error ?? 'Failed to delete staff.');
+          }
+        })
+      );
+  }
+
+  /** 將用戶標記為 former employees */  // v2.1.1 新增 v2.1.0之後增加
+  markAsFormer(userId: number): Observable<void> {
+    return this.http
+      .put<ApiAffectResponse>(`${this.baseUrl}/${userId}/mark-former`, {})
+      .pipe(
+        map((res: ApiAffectResponse) => {
+          if (!res.ok) {
+            throw new Error(res.error ?? 'Failed to mark user as former employee.');
           }
         })
       );
   }
 }
-
