@@ -1,18 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+
+import { DailyReportListComponent } from '../daily-reports/daily-report-list';
 
 @Component({
   selector: 'app-staff-activity',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DailyReportListComponent],
   templateUrl: './staff-activity.html',
-  styleUrls: ['./staff-activity.css']
+  styleUrls: ['./staff-activity.css'],
 })
-export class StaffActivityComponent implements OnInit {
-  logs: any[] = [];
-
-  ngOnInit() {
-    const saved = localStorage.getItem('staffActivityLogs');
-    this.logs = saved ? JSON.parse(saved) : [];
-  }
-}
+export class StaffActivityComponent {}

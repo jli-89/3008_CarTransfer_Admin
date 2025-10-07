@@ -38,6 +38,10 @@
     <div class="filter-actions">
       <button type="button" class="btn primary" (click)="applyFilters()">Apply</button>
       <button type="button" class="btn" (click)="clearFilters()">Reset</button>
+      <label class="toggle">
+        <input type="checkbox" [(ngModel)]="showApproved" (change)="applyFilters()" />
+        <span>Show Approved</span>
+      </label>
     </div>
   </section>
 
@@ -67,16 +71,16 @@
             <td>{{ sheet.staff_display_name || sheet.staff_user_id }}</td>
             <td>{{ sheet.work_date }}</td>
             <td><span class="status-tag status-{{ sheet.status }}">{{ sheet.status | titlecase }}</span></td>
-            <td>{{ sheet.total_minutes ?? '—' }}</td>
-            <td>{{ sheet.has_employee_signature ? '✔' : '—' }}</td>
-            <td>{{ sheet.has_manager_signature ? '✔' : '—' }}</td>
+            <td>{{ sheet.total_minutes ?? 'N/A' }}</td>
+            <td>{{ sheet.has_employee_signature ? 'Yes' : 'No' }}</td>
+            <td>{{ sheet.has_manager_signature ? 'Yes' : 'No' }}</td>
           </tr>
           <tr *ngIf="!timesheets.length && !isLoadingList">
             <td colspan="7" class="muted">No timesheets found.</td>
           </tr>
         </tbody>
       </table>
-      <div *ngIf="isLoadingList" class="loading">Loading timesheets…</div>
+      <div *ngIf="isLoadingList" class="loading">Loading timesheets...</div>
       <div *ngIf="meta" class="list-meta">
         Total: {{ meta.total }} | Page {{ meta.page }} / {{ meta.totalPages }}
       </div>
@@ -93,7 +97,7 @@
         <button type="button" class="btn" (click)="refreshDetail()">Refresh</button>
       </div>
 
-      <div *ngIf="isLoadingDetail" class="loading">Loading detail…</div>
+      <div *ngIf="isLoadingDetail" class="loading">Loading detail...</div>
       <div *ngIf="detailError" class="alert alert-error">{{ detailError }}</div>
 
       <div class="detail-content" *ngIf="!isLoadingDetail && !detailError">
@@ -108,11 +112,11 @@
           </div>
           <div>
             <dt>Start / End</dt>
-            <dd>{{ selectedTimesheet.start_time || '—' }} → {{ selectedTimesheet.end_time || '—' }}</dd>
+            <dd>{{ selectedTimesheet.start_time || 'N/A' }} → {{ selectedTimesheet.end_time || 'N/A' }}</dd>
           </div>
           <div>
             <dt>Total Minutes</dt>
-            <dd>{{ selectedTimesheet.total_minutes ?? '—' }}</dd>
+            <dd>{{ selectedTimesheet.total_minutes ?? 'N/A' }}</dd>
           </div>
           <div>
             <dt>Status</dt>
@@ -120,15 +124,15 @@
           </div>
           <div>
             <dt>Location</dt>
-            <dd>{{ selectedTimesheet.location || '—' }}</dd>
+            <dd>{{ selectedTimesheet.location || 'N/A' }}</dd>
           </div>
           <div>
             <dt>Notes</dt>
-            <dd>{{ selectedTimesheet.notes || '—' }}</dd>
+            <dd>{{ selectedTimesheet.notes || 'N/A' }}</dd>
           </div>
           <div>
             <dt>Approved By</dt>
-            <dd>{{ selectedTimesheet.approved_by_display_name || '—' }}</dd>
+            <dd>{{ selectedTimesheet.approved_by_display_name || 'N/A' }}</dd>
           </div>
         </dl>
 
@@ -163,10 +167,12 @@
           <canvas #managerSignCanvas class="signature-canvas" width="400" height="160"></canvas>
           <div *ngIf="signError" class="alert alert-error">{{ signError }}</div>
           <button type="button" class="btn primary" (click)="submitManagerSignature()" [disabled]="isSigning">
-            {{ isSigning ? 'Saving…' : 'Sign as Manager' }}
+            {{ isSigning ? 'Saving...' : 'Sign as Manager' }}
           </button>
         </section>
       </div>
     </div>
   </div>
 </div>
+
+

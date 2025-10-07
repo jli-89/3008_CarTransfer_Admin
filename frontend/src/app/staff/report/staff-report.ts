@@ -21,12 +21,11 @@ export class StaffReportComponent {
       details: '',
       notes: '',
       actionRequired: '',
-      solved: '',
-      photo: null
+      solved: ''
     }
   ];
 
-  // ✅ Only keep local form data
+  // Local-only stub until API integration
   constructor() {}
 
   addClient() {
@@ -35,31 +34,18 @@ export class StaffReportComponent {
       details: '',
       notes: '',
       actionRequired: '',
-      solved: '',
-      photo: null
+      solved: ''
     });
   }
 
   removeClient(index: number) {
     this.clients.splice(index, 1);
   }
+  // Attach Photo temporarily disabled (?????)
+  // onPhotoSelected(event: any, client: any) {}
+  // removePhoto(client: any) {}
 
-  onPhotoSelected(event: any, client: any) {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        client.photo = reader.result;
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  removePhoto(client: any) {
-    client.photo = null;
-  }
-
-  // ✅ Submit → Save only to Work History
+  // Submit and store locally until daily reports API is wired for staff
   submitReport() {
     const newReport = {
       date: this.date,
@@ -80,9 +66,11 @@ export class StaffReportComponent {
     this.end = '';
     this.staffName = '';
     this.clients = [
-      { clientName: '', details: '', notes: '', actionRequired: '', solved: '', photo: null }
+      { clientName: '', details: '', notes: '', actionRequired: '', solved: '' }
     ];
 
     alert('Report submitted successfully! It is now available in Work History.');
   }
 }
+
+

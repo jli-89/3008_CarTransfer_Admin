@@ -224,6 +224,8 @@ async function listTimesheets(req, res) {
   const filters = [];
   const params = [];
 
+  const includeApproved = String(req.query?.include_approved || '').toLowerCase() === 'true';
+
   const status = req.query?.status;
   if (status) {
     const statuses = String(status)
@@ -235,6 +237,8 @@ async function listTimesheets(req, res) {
       filters.push(`t.status IN (${statuses.map(() => "?").join(",")})`);
       params.push(...statuses);
     }
+  } else if (!includeApproved) {
+    filters.push("t.status <> 'approved'");
   }
 
   const staffId = parseIntOrNull(req.query?.staff_user_id, "staff_user_id");
@@ -286,7 +290,7 @@ async function listTimesheets(req, res) {
          LEFT JOIN timesheet_signatures mgr
                 ON mgr.timesheet_id = t.timesheet_id AND mgr.signer_role = 'manager'
          ${whereSql}
-         ORDER BY t.work_date DESC, t.timesheet_id DESC
+         ORDER BY t.created_at DESC, t.timesheet_id DESC
          LIMIT ? OFFSET ?`,
       [...params, pageSize, offset]
     );

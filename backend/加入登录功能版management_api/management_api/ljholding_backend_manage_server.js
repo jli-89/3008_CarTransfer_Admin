@@ -9,6 +9,7 @@ const cors = require("cors");
 const { pools } = require("./database");
 const Orders = require("./controllerAPI/orders");//用于订单管理
 const Timesheets = require("./controllerAPI/timesheets");
+const DailyReports = require("./controllerAPI/dailyReports");
 const Quotes = require("./controllerAPI/quotes");//用于管理路线的预估报价相关
 const Users = require("./controllerAPI/users");//用于账户登录/鉴权/管理
 const { verifyToken } = require("./middleware/auth"); // [NEW] JWT 校验中间件
@@ -272,6 +273,12 @@ r.get("/api/timesheets/:timesheetId", Timesheets.getTimesheet);
 r.post("/api/timesheets", Timesheets.createTimesheet);
 r.put("/api/timesheets/:timesheetId", Timesheets.updateTimesheet);
 r.post("/api/timesheets/:timesheetId/signature", Timesheets.signTimesheet);
+
+// daily reports
+r.get("/api/daily-reports", DailyReports.listDailyReports);
+r.get("/api/daily-reports/:reportId", DailyReports.getDailyReport);
+r.post("/api/daily-reports", DailyReports.createDailyReport);
+r.get("/api/my/daily-reports", DailyReports.listMyDailyReports);
 
 r.get("/api/my/timesheets", Timesheets.listMyTimesheets);
 

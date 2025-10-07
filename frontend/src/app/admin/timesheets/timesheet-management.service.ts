@@ -124,7 +124,12 @@ export class TimesheetManagementService {
 
   constructor(private http: HttpClient) {}
 
-  listTimesheets(query: TimesheetQuery, page = 1, pageSize = 20): Observable<TimesheetListResult> {
+  listTimesheets(
+    query: TimesheetQuery,
+    page = 1,
+    pageSize = 20,
+    includeApproved = false
+  ): Observable<TimesheetListResult> {
     let params = new HttpParams();
 
     if (query.status) {
@@ -142,6 +147,9 @@ export class TimesheetManagementService {
 
     params = params.set('page', String(page));
     params = params.set('pageSize', String(pageSize));
+    if (includeApproved) {
+      params = params.set('include_approved', 'true');
+    }
 
     return this.http
       .get<ApiTimesheetListResponse>(`${this.baseUrl}/timesheets`, { params })
@@ -164,7 +172,12 @@ export class TimesheetManagementService {
       );
   }
 
-  listMyTimesheets(page = 1, pageSize = 20, query: TimesheetQuery = {}): Observable<TimesheetListResult> {
+  listMyTimesheets(
+    page = 1,
+    pageSize = 20,
+    query: TimesheetQuery = {},
+    includeApproved = false
+  ): Observable<TimesheetListResult> {
     let params = new HttpParams()
       .set('page', String(page))
       .set('pageSize', String(pageSize));
@@ -177,6 +190,9 @@ export class TimesheetManagementService {
     }
     if (query.status) {
       params = params.set('status', query.status);
+    }
+    if (includeApproved) {
+      params = params.set('include_approved', 'true');
     }
 
     return this.http
