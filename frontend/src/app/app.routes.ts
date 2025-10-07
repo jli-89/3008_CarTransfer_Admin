@@ -9,6 +9,7 @@ import { AdminDashboardComponent } from './admin/dashboard/admin-dashboard';
 import { StaffManagementComponent } from './admin/staff-management/staff-management';
 import { StaffActivityComponent } from './admin/staff-activity/staff-activity';
 import { TimesheetReviewComponent } from './admin/timesheet-review/timesheet-review';
+import { OrderManagementComponent } from './admin/order-management/order-management';
 
 import { StaffDashboardComponent } from './staff/dashboard/staff-dashboard';
 import { EnquiriesComponent } from './staff/enquiries/enquiries';
@@ -25,6 +26,7 @@ export const routes: Routes = [
 
   { path: 'admin/dashboard', component: AdminDashboardComponent, canActivate: [authGuard] },
   { path: 'admin/staff-management', component: StaffManagementComponent, canActivate: [authGuard] },
+  { path: 'admin/order-management', component: OrderManagementComponent, canActivate: [authGuard] },
   { path: 'admin/staff-activity', component: StaffActivityComponent, canActivate: [authGuard] },
   { path: 'admin/timesheet-review', component: TimesheetReviewComponent, canActivate: [authGuard] },
 
