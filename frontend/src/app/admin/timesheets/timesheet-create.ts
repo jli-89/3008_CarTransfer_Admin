@@ -16,7 +16,6 @@ import {
   SignTimesheetPayload,
   StaffOption,
   TimesheetManagementService,
-  TimesheetStatus,
 } from './timesheet-management.service';
 
 interface TimesheetFormState {
@@ -26,7 +25,6 @@ interface TimesheetFormState {
   end_time: string;
   location: string;
   notes: string;
-  status: TimesheetStatus;
 }
 
 class SignaturePadController {
@@ -140,11 +138,8 @@ class SignaturePadController {
 })
 export class TimesheetCreateComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('employeeSigCanvas') employeeSigCanvas?: ElementRef<HTMLCanvasElement>;
-  @ViewChild('managerSigCanvas') managerSigCanvas?: ElementRef<HTMLCanvasElement>;
 
   staffOptions: StaffOption[] = [];
-  statuses: TimesheetStatus[] = ['draft', 'submitted', 'approved', 'rejected'];
-
   form: TimesheetFormState = this.createDefaultForm();
 
   isLoading = false;
@@ -152,8 +147,6 @@ export class TimesheetCreateComponent implements OnInit, AfterViewInit, OnDestro
   successMessage: string | null = null;
 
   private employeePad?: SignaturePadController;
-  private managerPad?: SignaturePadController;
-
   constructor(
     private readonly timesheetService: TimesheetManagementService,
     private readonly router: Router
@@ -168,15 +161,10 @@ export class TimesheetCreateComponent implements OnInit, AfterViewInit, OnDestro
       this.employeePad = new SignaturePadController(this.employeeSigCanvas);
       this.employeePad.init();
     }
-    if (this.managerSigCanvas) {
-      this.managerPad = new SignaturePadController(this.managerSigCanvas);
-      this.managerPad.init();
-    }
   }
 
   ngOnDestroy(): void {
     this.employeePad?.destroy();
-    this.managerPad?.destroy();
   }
 
   async submit(): Promise<void> {
@@ -198,9 +186,8 @@ export class TimesheetCreateComponent implements OnInit, AfterViewInit, OnDestro
       work_date: this.form.work_date,
       start_time: this.form.start_time || undefined,
       end_time: this.form.end_time || undefined,
-      location: this.form.location.trim() || undefined,
-      notes: this.form.notes.trim() || undefined,
-      status: this.form.status,
+      location: this.form.location.trim() ? this.form.location.trim() : undefined,
+      notes: this.form.notes.trim() ? this.form.notes.trim() : undefined,
     };
 
     const total = this.calculateTotalMinutes(this.form.work_date, this.form.start_time, this.form.end_time);
@@ -213,27 +200,19 @@ export class TimesheetCreateComponent implements OnInit, AfterViewInit, OnDestro
     try {
       const created = await firstValueFrom(this.timesheetService.createTimesheet(payload));
 
-      const signaturePayloads: SignTimesheetPayload[] = [];
       const employeeDataUrl = this.employeePad?.toDataUrl();
       if (employeeDataUrl) {
-        signaturePayloads.push({ signer_role: 'employee', signature_data_url: employeeDataUrl });
-      }
-      const managerDataUrl = this.managerPad?.toDataUrl();
-      if (managerDataUrl) {
-        signaturePayloads.push({ signer_role: 'manager', signature_data_url: managerDataUrl });
-      }
-
-      let detail = created;
-      for (const signature of signaturePayloads) {
-        detail = await firstValueFrom(
-          this.timesheetService.signTimesheet(detail.timesheet_id, signature)
+        await firstValueFrom(
+          this.timesheetService.signTimesheet(created.timesheet_id, {
+            signer_role: 'employee',
+            signature_data_url: employeeDataUrl,
+          })
         );
       }
 
       this.successMessage = 'Timesheet created successfully.';
       this.resetForm();
       this.employeePad?.clear();
-      this.managerPad?.clear();
     } catch (err) {
       this.errorMessage = err instanceof Error ? err.message : 'Failed to create timesheet.';
     } finally {
@@ -243,10 +222,6 @@ export class TimesheetCreateComponent implements OnInit, AfterViewInit, OnDestro
 
   clearEmployeeSignature(): void {
     this.employeePad?.clear();
-  }
-
-  clearManagerSignature(): void {
-    this.managerPad?.clear();
   }
 
   navigateToList(): void {
@@ -285,7 +260,6 @@ export class TimesheetCreateComponent implements OnInit, AfterViewInit, OnDestro
       end_time: '',
       location: '',
       notes: '',
-      status: 'submitted',
     };
   }
 

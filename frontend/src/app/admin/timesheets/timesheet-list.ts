@@ -13,9 +13,9 @@ import {
   SignTimesheetPayload,
   StaffOption,
   TimesheetDetail,
+  TimesheetListMeta,
   TimesheetManagementService,
   TimesheetQuery,
-  TimesheetSignerRole,
   TimesheetStatus,
   TimesheetSummary,
 } from './timesheet-management.service';
@@ -143,6 +143,9 @@ export class TimesheetListComponent implements OnInit, OnDestroy {
 
   timesheets: TimesheetSummary[] = [];
   selectedTimesheet: TimesheetDetail | null = null;
+  meta: TimesheetListMeta | null = null;
+  currentPage = 1;
+  pageSize = 20;
 
   isLoadingList = false;
   isLoadingDetail = false;
@@ -150,6 +153,7 @@ export class TimesheetListComponent implements OnInit, OnDestroy {
   errorMessage: string | null = null;
   detailError: string | null = null;
   signError: string | null = null;
+  statusSuccessMessage: string | null = null;
 
   private managerPad?: SignaturePadController;
 
@@ -165,12 +169,41 @@ export class TimesheetListComponent implements OnInit, OnDestroy {
   }
 
   applyFilters(): void {
+    this.currentPage = 1;
     this.fetchTimesheets();
   }
 
   clearFilters(): void {
     this.filters = {};
+    this.currentPage = 1;
     this.fetchTimesheets();
+  }
+
+  goToPage(page: number): void {
+    if (!this.meta) {
+      return;
+    }
+    const totalPages = this.meta.totalPages || 1;
+    const target = Math.min(Math.max(page, 1), totalPages);
+    if (target === this.currentPage) {
+      return;
+    }
+    this.currentPage = target;
+    this.fetchTimesheets(false);
+  }
+
+  nextPage(): void {
+    if (this.meta && this.currentPage < this.meta.totalPages) {
+      this.currentPage += 1;
+      this.fetchTimesheets(false);
+    }
+  }
+
+  prevPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage -= 1;
+      this.fetchTimesheets(false);
+    }
   }
 
   selectTimesheet(timesheet: TimesheetSummary): void {
@@ -193,6 +226,7 @@ export class TimesheetListComponent implements OnInit, OnDestroy {
     }
     this.signError = null;
     this.detailError = null;
+    this.statusSuccessMessage = null;
     this.isSigning = true;
 
     this.timesheetService
@@ -200,7 +234,8 @@ export class TimesheetListComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (detail) => {
           this.selectedTimesheet = detail;
-          this.fetchTimesheets(false);
+          this.mergeSummary(detail);
+          this.statusSuccessMessage = `Status updated to ${detail.status}.`;
           this.isSigning = false;
         },
         error: (err) => {
@@ -231,8 +266,8 @@ export class TimesheetListComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (detail) => {
           this.selectedTimesheet = detail;
+          this.mergeSummary(detail);
           this.managerPad?.clear();
-          this.fetchTimesheets(false);
           this.isSigning = false;
         },
         error: (err) => {
@@ -250,29 +285,40 @@ export class TimesheetListComponent implements OnInit, OnDestroy {
   private fetchTimesheets(resetSelection: boolean = true): void {
     this.isLoadingList = true;
     this.errorMessage = null;
-    this.timesheetService.listTimesheets(this.filters).subscribe({
-      next: (data) => {
-        this.timesheets = data;
-        this.isLoadingList = false;
-        if (resetSelection) {
-          this.selectedTimesheet = null;
-        } else if (this.selectedTimesheet) {
-          const stillExists = data.some((row) => row.timesheet_id === this.selectedTimesheet!.timesheet_id);
-          if (!stillExists) {
-            this.selectedTimesheet = null;
+    this.timesheetService
+      .listTimesheets(this.filters, this.currentPage, this.pageSize)
+      .subscribe({
+        next: (result) => {
+          this.timesheets = result.data;
+          this.meta = result.meta;
+          this.currentPage = result.meta.page;
+          this.pageSize = result.meta.pageSize;
+          this.isLoadingList = false;
+
+          if (resetSelection) {
+            this.selectedTimesheet = result.data.length ? null : this.selectedTimesheet;
+          } else if (this.selectedTimesheet) {
+            const match = result.data.find(
+              (row) => row.timesheet_id === this.selectedTimesheet!.timesheet_id
+            );
+            if (!match) {
+              this.selectedTimesheet = null;
+            } else {
+              this.mergeSummary(this.selectedTimesheet);
+            }
           }
+        },
+        error: (err) => {
+          this.errorMessage = err instanceof Error ? err.message : 'Unable to load timesheets.';
+          this.isLoadingList = false;
         }
-      },
-      error: (err) => {
-        this.errorMessage = err instanceof Error ? err.message : 'Unable to load timesheets.';
-        this.isLoadingList = false;
-      }
-    });
+      });
   }
 
   private loadDetail(timesheetId: number): void {
     this.isLoadingDetail = true;
     this.detailError = null;
+    this.statusSuccessMessage = null;
     this.timesheetService.getTimesheet(timesheetId).subscribe({
       next: (detail) => {
         this.selectedTimesheet = detail;
@@ -295,5 +341,25 @@ export class TimesheetListComponent implements OnInit, OnDestroy {
         this.staffOptions = [];
       }
     });
+  }
+
+  private mergeSummary(detail: TimesheetDetail): void {
+    this.timesheets = this.timesheets.map((summary) =>
+      summary.timesheet_id === detail.timesheet_id
+        ? {
+            ...summary,
+            work_date: detail.work_date,
+            status: detail.status,
+            total_minutes: detail.total_minutes,
+            location: detail.location,
+            notes: detail.notes,
+            approved_by_user_id: detail.approved_by_user_id,
+            approved_by_display_name: detail.approved_by_display_name,
+            approved_at: detail.approved_at,
+            has_employee_signature: detail.signatures.some((sig) => sig.signer_role === 'employee'),
+            has_manager_signature: detail.signatures.some((sig) => sig.signer_role === 'manager'),
+          }
+        : summary
+    );
   }
 }

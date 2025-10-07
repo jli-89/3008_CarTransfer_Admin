@@ -71,9 +71,20 @@
             <td>{{ sheet.has_employee_signature ? '✔' : '—' }}</td>
             <td>{{ sheet.has_manager_signature ? '✔' : '—' }}</td>
           </tr>
+          <tr *ngIf="!timesheets.length && !isLoadingList">
+            <td colspan="7" class="muted">No timesheets found.</td>
+          </tr>
         </tbody>
       </table>
       <div *ngIf="isLoadingList" class="loading">Loading timesheets…</div>
+      <div *ngIf="meta" class="list-meta">
+        Total: {{ meta.total }} | Page {{ meta.page }} / {{ meta.totalPages }}
+      </div>
+      <div *ngIf="meta && meta.totalPages > 1" class="pagination">
+        <button type="button" class="btn" (click)="prevPage()" [disabled]="currentPage <= 1">Previous</button>
+        <span>Page {{ currentPage }} of {{ meta.totalPages }}</span>
+        <button type="button" class="btn" (click)="nextPage()" [disabled]="meta && currentPage >= meta.totalPages">Next</button>
+      </div>
     </div>
 
     <div class="detail-panel" *ngIf="selectedTimesheet">
@@ -127,6 +138,7 @@
           <button type="button" class="btn" (click)="updateStatus('approved')" [disabled]="isSigning">Approved</button>
           <button type="button" class="btn" (click)="updateStatus('rejected')" [disabled]="isSigning">Rejected</button>
         </div>
+        <div *ngIf="statusSuccessMessage" class="alert alert-success">{{ statusSuccessMessage }}</div>
 
         <section class="signature-view">
           <h3>Existing Signatures</h3>

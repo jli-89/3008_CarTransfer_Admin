@@ -273,6 +273,8 @@ r.post("/api/timesheets", Timesheets.createTimesheet);
 r.put("/api/timesheets/:timesheetId", Timesheets.updateTimesheet);
 r.post("/api/timesheets/:timesheetId/signature", Timesheets.signTimesheet);
 
+r.get("/api/my/timesheets", Timesheets.listMyTimesheets);
+
 // quotes
 
 // app.get("/api/quotes/locations", Quotes.listLocations);
