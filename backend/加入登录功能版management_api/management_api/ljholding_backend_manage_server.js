@@ -8,6 +8,7 @@ const express = require("express");
 const cors = require("cors");
 const { pools } = require("./database");
 const Orders = require("./controllerAPI/orders");//用于订单管理
+const Timesheets = require("./controllerAPI/timesheets");
 const Quotes = require("./controllerAPI/quotes");//用于管理路线的预估报价相关
 const Users = require("./controllerAPI/users");//用于账户登录/鉴权/管理
 const { verifyToken } = require("./middleware/auth"); // [NEW] JWT 校验中间件
@@ -264,6 +265,13 @@ r.get("/api/meta/transfer-status-options", Orders.getTransferStatusOptions);
 r.put("/api/orders/:orderId", Orders.updateOrder);
 r.put("/api/items/:itemId", Orders.updateItem);
 r.put("/api/items/:itemId/transfer_status", Orders.updateItemStatus);
+
+// timesheets
+r.get("/api/timesheets", Timesheets.listTimesheets);
+r.get("/api/timesheets/:timesheetId", Timesheets.getTimesheet);
+r.post("/api/timesheets", Timesheets.createTimesheet);
+r.put("/api/timesheets/:timesheetId", Timesheets.updateTimesheet);
+r.post("/api/timesheets/:timesheetId/signature", Timesheets.signTimesheet);
 
 // quotes
 
