@@ -1166,7 +1166,12 @@ async function login(req, res) {
         return res.status(401).json({ ok: false, error: "invalid credentials" });
       }
 
-      const token = signToken({ uid: user.user_id, role: user.user_group });
+      const token = signToken({
+        uid: user.user_id,
+        role: user.user_group,
+        uname: user.user_name,
+        realName: user.real_name || null,
+      });
       delete user.user_password;
 
       try {
