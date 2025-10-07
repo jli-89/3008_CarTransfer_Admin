@@ -1,0 +1,149 @@
+.timesheet-history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filters-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.filter-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.filter-group label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.filter-group input {
+  padding: 8px 10px;
+  border: 1px solid #c8c8c8;
+  border-radius: 6px;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.history-table {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.history-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-table th,
+.history-table td {
+  border-bottom: 1px solid #e2e2e2;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+}
+
+.history-table th {
+  background: #f2f5ff;
+  text-align: left;
+}
+
+.status-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  background: #eef4ff;
+  color: #0b5ed7;
+}
+
+.status-tag.status-approved {
+  background: #e8f6ec;
+  color: #2e7d32;
+}
+
+.status-tag.status-rejected {
+  background: #fdecea;
+  color: #b71c1c;
+}
+
+.status-tag.status-draft {
+  background: #f4f0ff;
+  color: #5e35b1;
+}
+
+.muted {
+  color: #6c757d;
+  text-align: center;
+}
+
+.loading {
+  padding: 8px 0;
+  color: #0b6efd;
+  font-weight: 600;
+}
+
+.alert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.alert-error {
+  background: #ffe6e6;
+  border: 1px solid #f0b7b7;
+  color: #7a2121;
+}
+
+.list-meta {
+  padding: 12px 0;
+  color: #4a4a4a;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: #ffffff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn.primary {
+  background: #0b6efd;
+  border-color: #0b6efd;
+  color: #ffffff;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

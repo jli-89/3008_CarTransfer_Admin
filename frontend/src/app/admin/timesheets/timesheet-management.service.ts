@@ -42,9 +42,23 @@ export interface TimesheetDetail extends TimesheetSummary {
   signatures: TimesheetSignature[];
 }
 
+export interface TimesheetListMeta {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
+export interface TimesheetListResult {
+  data: TimesheetSummary[];
+  meta: TimesheetListMeta;
+}
+
 interface ApiTimesheetListResponse {
   ok: boolean;
   data?: TimesheetSummary[];
+  meta?: TimesheetListMeta;
   error?: string;
 }
 
@@ -69,8 +83,6 @@ export interface CreateTimesheetPayload {
   total_minutes?: number | null;
   location?: string | null;
   notes?: string | null;
-  status?: TimesheetStatus;
-  approved_by_user_id?: number | null;
 }
 
 export interface UpdateTimesheetPayload {
@@ -112,13 +124,13 @@ export class TimesheetManagementService {
 
   constructor(private http: HttpClient) {}
 
-  listTimesheets(query: TimesheetQuery): Observable<TimesheetSummary[]> {
+  listTimesheets(query: TimesheetQuery, page = 1, pageSize = 20): Observable<TimesheetListResult> {
     let params = new HttpParams();
 
     if (query.status) {
       params = params.set('status', query.status);
     }
-    if (typeof query.staff_user_id === 'number') {
+    if (query.staff_user_id !== undefined && query.staff_user_id !== null) {
       params = params.set('staff_user_id', String(query.staff_user_id));
     }
     if (query.date_from) {
@@ -128,6 +140,9 @@ export class TimesheetManagementService {
       params = params.set('date_to', query.date_to);
     }
 
+    params = params.set('page', String(page));
+    params = params.set('pageSize', String(pageSize));
+
     return this.http
       .get<ApiTimesheetListResponse>(`${this.baseUrl}/timesheets`, { params })
       .pipe(
@@ -135,7 +150,52 @@ export class TimesheetManagementService {
           if (!res.ok || !res.data) {
             throw new Error(res.error ?? 'Unable to load timesheets');
           }
-          return res.data;
+          return {
+            data: res.data,
+            meta: res.meta ?? {
+              total: res.data.length,
+              page,
+              pageSize,
+              totalPages: 1,
+              hasMore: false,
+            },
+          };
+        })
+      );
+  }
+
+  listMyTimesheets(page = 1, pageSize = 20, query: TimesheetQuery = {}): Observable<TimesheetListResult> {
+    let params = new HttpParams()
+      .set('page', String(page))
+      .set('pageSize', String(pageSize));
+
+    if (query.date_from) {
+      params = params.set('date_from', query.date_from);
+    }
+    if (query.date_to) {
+      params = params.set('date_to', query.date_to);
+    }
+    if (query.status) {
+      params = params.set('status', query.status);
+    }
+
+    return this.http
+      .get<ApiTimesheetListResponse>(`${this.baseUrl}/my/timesheets`, { params })
+      .pipe(
+        map((res) => {
+          if (!res.ok || !res.data) {
+            throw new Error(res.error ?? 'Unable to load your timesheets');
+          }
+          return {
+            data: res.data,
+            meta: res.meta ?? {
+              total: res.data.length,
+              page,
+              pageSize,
+              totalPages: 1,
+              hasMore: false,
+            },
+          };
         })
       );
   }

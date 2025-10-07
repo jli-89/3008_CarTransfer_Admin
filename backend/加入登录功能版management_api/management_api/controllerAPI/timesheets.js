@@ -153,6 +153,17 @@ function parseIntOrNull(value, fieldName) {
   return num;
 }
 
+function parsePositiveInt(value, fallback, max = 100) {
+  const num = Number(value);
+  if (!Number.isInteger(num) || num <= 0) {
+    return fallback;
+  }
+  if (max && num > max) {
+    return max;
+  }
+  return num;
+}
+
 async function resolveUser(conn, cache, userId, fieldName) {
   const normalized = parseIntOrNull(userId, fieldName);
   if (normalized === undefined) {
@@ -244,11 +255,24 @@ async function listTimesheets(req, res) {
     params.push(dateTo);
   }
 
+  const page = parsePositiveInt(req.query?.page || req.query?.page_no, 1, 1000);
+  const pageSize = parsePositiveInt(req.query?.pageSize || req.query?.page_size || req.query?.limit, 20, 100);
   const whereSql = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
 
   let conn;
   try {
     conn = await pool.getConnection();
+
+    const [[{ total }]] = await conn.query(
+      `SELECT COUNT(*) AS total FROM timesheets t ${whereSql}`,
+      params
+    );
+
+    const totalNumber = Number(total) || 0;
+    const totalPages = totalNumber === 0 ? 1 : Math.ceil(totalNumber / pageSize);
+    const safePage = Math.min(Math.max(page, 1), totalPages);
+    const offset = (safePage - 1) * pageSize;
+
     const [rows] = await conn.query(
       `SELECT t.*, su.user_name AS staff_user_name, su.real_name AS staff_real_name,
               au.user_name AS approver_user_name, au.real_name AS approver_real_name,
@@ -262,11 +286,22 @@ async function listTimesheets(req, res) {
          LEFT JOIN timesheet_signatures mgr
                 ON mgr.timesheet_id = t.timesheet_id AND mgr.signer_role = 'manager'
          ${whereSql}
-         ORDER BY t.work_date DESC, t.timesheet_id DESC`,
-      params
+         ORDER BY t.work_date DESC, t.timesheet_id DESC
+         LIMIT ? OFFSET ?`,
+      [...params, pageSize, offset]
     );
 
-    res.json({ ok: true, data: rows.map(mapTimesheetRow) });
+    res.json({
+      ok: true,
+      data: rows.map(mapTimesheetRow),
+      meta: {
+        total: totalNumber,
+        page: safePage,
+        pageSize,
+        totalPages,
+        hasMore: safePage < totalPages,
+      },
+    });
   } catch (err) {
     console.error("[timesheets.listTimesheets]", err);
     res.status(500).json({ ok: false, error: err.message });
@@ -380,7 +415,7 @@ async function createTimesheet(req, res) {
     const endTime = normalizeTime(payload.end_time, "end_time", true);
     const location = normalizeOptionalString(payload.location, 100);
     const notes = payload.notes !== undefined ? payload.notes : null;
-    const status = normalizeEnum(payload.status ?? "submitted", TIMESHEET_STATUS, "status");
+    const status = 'submitted';
 
     const totalMinutes = payload.total_minutes !== undefined && payload.total_minutes !== null && payload.total_minutes !== ""
       ? Number(payload.total_minutes)
@@ -389,11 +424,6 @@ async function createTimesheet(req, res) {
     if (totalMinutes !== null && (!Number.isInteger(totalMinutes) || totalMinutes < -1440 || totalMinutes > 1440)) {
       throw validationError("total_minutes must be an integer between -1440 and 1440");
     }
-
-    const userCache = new Map();
-    const approvedBy = await resolveUser(conn, userCache, payload.approved_by_user_id, "approved_by_user_id");
-
-    const approvedAt = approvedBy ? new Date() : null;
 
     const [result] = await conn.query(
       `INSERT INTO timesheets (
@@ -417,8 +447,8 @@ async function createTimesheet(req, res) {
         location,
         notes,
         status,
-        approvedBy ?? null,
-        approvedBy ? new Date() : null,
+        null,
+        null,
       ]
     );
 
@@ -732,8 +762,22 @@ async function signTimesheet(req, res) {
   }
 }
 
+async function listMyTimesheets(req, res) {
+  const userId = Number(req?.jwt?.uid);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(401).json({ ok: false, error: 'Authentication required' });
+  }
+
+  req.query = {
+    ...req.query,
+    staff_user_id: String(userId),
+  };
+  return listTimesheets(req, res);
+}
+
 module.exports = {
   listTimesheets,
+  listMyTimesheets,
   getTimesheet,
   createTimesheet,
   updateTimesheet,

@@ -35,13 +35,6 @@
         Location
         <input type="text" [(ngModel)]="form.location" name="location" placeholder="Optional" />
       </label>
-
-      <label>
-        Status
-        <select [(ngModel)]="form.status" name="status">
-          <option *ngFor="let status of statuses" [value]="status">{{ status | titlecase }}</option>
-        </select>
-      </label>
     </div>
 
     <label class="notes">
@@ -56,14 +49,6 @@
           <button type="button" class="btn link" (click)="clearEmployeeSignature()">Clear</button>
         </div>
         <canvas #employeeSigCanvas class="signature-canvas" width="400" height="160"></canvas>
-      </div>
-
-      <div class="signature-card">
-        <div class="signature-header">
-          <h3>Manager Signature</h3>
-          <button type="button" class="btn link" (click)="clearManagerSignature()">Clear</button>
-        </div>
-        <canvas #managerSigCanvas class="signature-canvas" width="400" height="160"></canvas>
       </div>
     </div>
 
