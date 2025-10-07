@@ -33,12 +33,15 @@
         <option value="Complete">Complete</option>
       </select>
 
+      <!-- Attach Photo ????? (feature temporarily disabled) -->
+      <!--
       <label>Attach Photo:</label>
       <input type="file" (change)="onPhotoSelected($event, client)">
       <div *ngIf="client.photo">
         <img [src]="client.photo" alt="Client Photo" width="150">
         <button type="button" (click)="removePhoto(client)">Remove Photo</button>
       </div>
+      -->
 
       <button type="button" class="remove-btn" *ngIf="clients.length > 1" (click)="removeClient(i)">Remove Client</button>
     </div>

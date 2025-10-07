@@ -1,6 +1,10 @@
-<div class="timesheet-history-container">
+<div class="daily-report-history-container">
   <div class="header">
-    <h1>My Timesheets</h1>
+    <h1>My Daily Reports</h1>
+    <div class="header-actions">
+      <a class="btn" routerLink="/admin/daily-reports">All Reports</a>
+      <a class="btn primary" routerLink="/admin/daily-reports/new">New Report</a>
+    </div>
   </div>
 
   <section class="filters-card">
@@ -13,14 +17,19 @@
         To
         <input type="date" [(ngModel)]="filters.date_to" name="historyTo" />
       </label>
+      <label>
+        Status
+        <select [(ngModel)]="filters.status" name="historyStatus">
+          <option value="">Any status</option>
+          <option value="Solved">Solved</option>
+          <option value="Not Solved">Not Solved</option>
+          <option value="Complete">Complete</option>
+        </select>
+      </label>
     </div>
     <div class="filter-actions">
       <button type="button" class="btn primary" (click)="applyFilters()">Apply</button>
       <button type="button" class="btn" (click)="clearFilters()">Reset</button>
-      <label class="toggle">
-        <input type="checkbox" [(ngModel)]="showApproved" (change)="applyFilters()" />
-        <span>Show Approved</span>
-      </label>
     </div>
   </section>
 
@@ -32,34 +41,24 @@
         <tr>
           <th>ID</th>
           <th>Date</th>
-          <th>Status</th>
-          <th>Total Minutes</th>
-          <th>Location</th>
-          <th>Notes</th>
-          <th>Employee Sig</th>
-          <th>Manager Sig</th>
+          <th>Clients</th>
+          <th>Created</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let sheet of timesheets">
-          <td>{{ sheet.timesheet_id }}</td>
-          <td>{{ sheet.work_date }}</td>
-          <td><span class="status-tag status-{{ sheet.status }}">{{ sheet.status | titlecase }}</span></td>
-          <td>{{ sheet.total_minutes ?? 'N/A' }}</td>
-          <td>{{ sheet.location || 'N/A' }}</td>
-          <td>{{ sheet.notes || 'N/A' }}</td>
-          <td>{{ sheet.has_employee_signature ? 'Yes' : 'No' }}</td>
-          <td>{{ sheet.has_manager_signature ? 'Yes' : 'No' }}</td>
+        <tr *ngFor="let report of reports">
+          <td>{{ report.report_id }}</td>
+          <td>{{ report.report_date }}</td>
+          <td>{{ report.client_count }}</td>
+          <td>{{ report.created_at | date: 'medium' }}</td>
         </tr>
-        <tr *ngIf="!timesheets.length && !isLoading">
-          <td colspan="8" class="muted">No timesheets found.</td>
+        <tr *ngIf="!reports.length && !isLoading">
+          <td colspan="4" class="muted">No reports found.</td>
         </tr>
       </tbody>
     </table>
-    <div *ngIf="isLoading" class="loading">Loading timesheets...</div>
-    <div *ngIf="meta" class="list-meta">
-      Total: {{ meta.total }} | Page {{ meta.page }} / {{ meta.totalPages }}
-    </div>
+    <div *ngIf="isLoading" class="loading">Loading...</div>
+    <div *ngIf="meta" class="list-meta">Total: {{ meta.total }} | Page {{ meta.page }} / {{ meta.totalPages }}</div>
     <div *ngIf="meta && meta.totalPages > 1" class="pagination">
       <button type="button" class="btn" (click)="prevPage()" [disabled]="currentPage <= 1">Previous</button>
       <span>Page {{ currentPage }} of {{ meta.totalPages }}</span>
@@ -67,4 +66,3 @@
     </div>
   </div>
 </div>
-

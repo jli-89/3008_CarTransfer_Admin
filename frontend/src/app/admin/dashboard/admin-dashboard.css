@@ -168,3 +168,20 @@ button:hover {
   clip: rect(0, 0, 0, 0);
   border: 0;
 }
+
+.quick-card-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.quick-btn.secondary {
+  background: #ffffff;
+  color: #0b6efd;
+  border: 1px solid #0b6efd;
+}
+
+.quick-btn.secondary:hover {
+  background: #dce8ff;
+}
+

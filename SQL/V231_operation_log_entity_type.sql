@@ -1,0 +1,2 @@
+ALTER TABLE operation_log
+  MODIFY COLUMN entity_type ENUM(''ORDER'',''ITEM'',''QUOTE'',''TIMESHEET'',''DAILY_REPORT'') NOT NULL;

@@ -146,6 +146,7 @@ export class TimesheetListComponent implements OnInit, OnDestroy {
   meta: TimesheetListMeta | null = null;
   currentPage = 1;
   pageSize = 20;
+  showApproved = false;
 
   isLoadingList = false;
   isLoadingDetail = false;
@@ -286,7 +287,7 @@ export class TimesheetListComponent implements OnInit, OnDestroy {
     this.isLoadingList = true;
     this.errorMessage = null;
     this.timesheetService
-      .listTimesheets(this.filters, this.currentPage, this.pageSize)
+      .listTimesheets(this.filters, this.currentPage, this.pageSize, this.showApproved)
       .subscribe({
         next: (result) => {
           this.timesheets = result.data;
@@ -303,7 +304,20 @@ export class TimesheetListComponent implements OnInit, OnDestroy {
             );
             if (!match) {
               this.selectedTimesheet = null;
-            } else {
+            } else if (this.selectedTimesheet) {
+              this.selectedTimesheet = {
+                ...this.selectedTimesheet,
+                work_date: match.work_date,
+                start_time: match.start_time,
+                end_time: match.end_time,
+                total_minutes: match.total_minutes,
+                location: match.location,
+                notes: match.notes,
+                status: match.status,
+                approved_by_user_id: match.approved_by_user_id,
+                approved_by_display_name: match.approved_by_display_name,
+                approved_at: match.approved_at,
+              };
               this.mergeSummary(this.selectedTimesheet);
             }
           }
