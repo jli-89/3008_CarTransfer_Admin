@@ -10,6 +10,8 @@ import { StaffManagementComponent } from './admin/staff-management/staff-managem
 import { StaffActivityComponent } from './admin/staff-activity/staff-activity';
 import { TimesheetReviewComponent } from './admin/timesheet-review/timesheet-review';
 import { OrderManagementComponent } from './admin/order-management/order-management';
+import { TimesheetListComponent } from './admin/timesheets/timesheet-list';
+import { TimesheetCreateComponent } from './admin/timesheets/timesheet-create';
 
 import { StaffDashboardComponent } from './staff/dashboard/staff-dashboard';
 import { EnquiriesComponent } from './staff/enquiries/enquiries';
@@ -27,6 +29,10 @@ export const routes: Routes = [
   { path: 'admin/dashboard', component: AdminDashboardComponent, canActivate: [authGuard] },
   { path: 'admin/staff-management', component: StaffManagementComponent, canActivate: [authGuard] },
   { path: 'admin/order-management', component: OrderManagementComponent, canActivate: [authGuard] },
+  { path: 'admin/timesheets', component: TimesheetListComponent, canActivate: [authGuard] },
+  { path: 'admin/timesheets/new', component: TimesheetCreateComponent, canActivate: [authGuard] },
+  { path: 'admin/work-history', component: WorkHistoryComponent, canActivate: [authGuard] },
+  { path: 'admin/daily-reports', component: StaffReportComponent, canActivate: [authGuard] },
   { path: 'admin/staff-activity', component: StaffActivityComponent, canActivate: [authGuard] },
   { path: 'admin/timesheet-review', component: TimesheetReviewComponent, canActivate: [authGuard] },
 

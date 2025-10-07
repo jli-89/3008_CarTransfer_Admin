@@ -1,0 +1,78 @@
+<div class="timesheet-create-container">
+  <div class="header">
+    <h1>Create Timesheet</h1>
+    <button type="button" class="btn secondary" (click)="navigateToList()">View Timesheets</button>
+  </div>
+
+  <form (ngSubmit)="submit()" class="timesheet-form" novalidate>
+    <div class="form-grid">
+      <label>
+        Staff Member
+        <select [(ngModel)]="form.staff_user_id" name="staffUser" required>
+          <option value="">Select staff</option>
+          <option *ngFor="let option of staffOptions" [value]="option.user_id">
+            {{ option.display }}
+          </option>
+        </select>
+      </label>
+
+      <label>
+        Work Date
+        <input type="date" [(ngModel)]="form.work_date" name="workDate" required />
+      </label>
+
+      <label>
+        Start Time
+        <input type="time" [(ngModel)]="form.start_time" name="startTime" />
+      </label>
+
+      <label>
+        End Time
+        <input type="time" [(ngModel)]="form.end_time" name="endTime" />
+      </label>
+
+      <label>
+        Location
+        <input type="text" [(ngModel)]="form.location" name="location" placeholder="Optional" />
+      </label>
+
+      <label>
+        Status
+        <select [(ngModel)]="form.status" name="status">
+          <option *ngFor="let status of statuses" [value]="status">{{ status | titlecase }}</option>
+        </select>
+      </label>
+    </div>
+
+    <label class="notes">
+      Notes
+      <textarea [(ngModel)]="form.notes" name="notes" rows="3" placeholder="Optional remarks"></textarea>
+    </label>
+
+    <div class="signature-section">
+      <div class="signature-card">
+        <div class="signature-header">
+          <h3>Employee Signature</h3>
+          <button type="button" class="btn link" (click)="clearEmployeeSignature()">Clear</button>
+        </div>
+        <canvas #employeeSigCanvas class="signature-canvas" width="400" height="160"></canvas>
+      </div>
+
+      <div class="signature-card">
+        <div class="signature-header">
+          <h3>Manager Signature</h3>
+          <button type="button" class="btn link" (click)="clearManagerSignature()">Clear</button>
+        </div>
+        <canvas #managerSigCanvas class="signature-canvas" width="400" height="160"></canvas>
+      </div>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
+    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+
+    <div class="actions">
+      <button type="submit" class="btn primary" [disabled]="isLoading">{{ isLoading ? 'Submitting…' : 'Submit Timesheet' }}</button>
+      <button type="button" class="btn" (click)="resetForm()" [disabled]="isLoading">Reset</button>
+    </div>
+  </form>
+</div>

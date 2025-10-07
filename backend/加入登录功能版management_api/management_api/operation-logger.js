@@ -9,7 +9,7 @@ const ACTIONS = new Set([
   "EXPORT",
 ]);
 
-const ENTITY_TYPES = new Set(["ORDER", "ITEM", "QUOTE"]);
+const ENTITY_TYPES = new Set(["ORDER", "ITEM", "QUOTE", "TIMESHEET"]);
 
 function toNullableTrimmed(value, maxLength) {
   if (value === null || value === undefined) {
