@@ -84,6 +84,73 @@ function toNullableString(value, maxLength) {
   return maxLength && str.length > maxLength ? str.slice(0, maxLength) : str;
 }
 
+function buildUserDisplayName(userName, realName) {
+  const trimmedReal = typeof realName === "string" ? realName.trim() : "";
+  if (trimmedReal) {
+    return trimmedReal;
+  }
+  const trimmedUser = typeof userName === "string" ? userName.trim() : "";
+  return trimmedUser || null;
+}
+
+function parseNullableInteger(value, fieldName) {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (value === null || value === "") {
+    return null;
+  }
+  const num = Number(value);
+  if (!Number.isInteger(num) || num <= 0) {
+    throw validationError(`${fieldName} must be a positive integer or null`);
+  }
+  return num;
+}
+
+async function resolveUserReference(conn, cache, value, fieldName) {
+  const normalized = parseNullableInteger(value, fieldName);
+  if (normalized === undefined || normalized === null) {
+    return normalized ?? null;
+  }
+
+  if (cache.has(normalized)) {
+    return normalized;
+  }
+
+  const [rows] = await conn.query(
+    "SELECT user_id FROM users WHERE user_id=?",
+    [normalized]
+  );
+  if (!rows.length) {
+    throw validationError(`${fieldName} references a non-existent user`);
+  }
+  cache.set(normalized, true);
+  return normalized;
+}
+
+function randomCodeSegment(length = 6) {
+  return Math.random()
+    .toString(16)
+    .slice(2, 2 + length)
+    .toUpperCase();
+}
+
+async function generateOrderCode(conn) {
+  let attempt = 0;
+  while (attempt < 10) {
+    const code = `ORD-${Date.now().toString(36).toUpperCase()}-${randomCodeSegment(4)}`;
+    const [rows] = await conn.query(
+      "SELECT order_id FROM orders WHERE public_order_code=? LIMIT 1",
+      [code]
+    );
+    if (!rows.length) {
+      return code;
+    }
+    attempt += 1;
+  }
+  throw new Error("Unable to generate unique order code");
+}
+
 function parseSearchTerm(value) {
   return toNullableString(value, 255);
 }
@@ -211,13 +278,17 @@ function isSameValue(oldVal, newVal) {
 }
 
 function normalizeOrderPayload(payload = {}) {
-  const aliasMap = {
-    customerName: "customer_name",
-    customerEmail: "customer_email",
-    customerPhone: "customer_phone",
-    priceTotal: "price_total",
-    orderStatus: "order_status",
-  };
+    const aliasMap = {
+      customerName: "customer_name",
+      customerEmail: "customer_email",
+      customerPhone: "customer_phone",
+      priceTotal: "price_total",
+      orderStatus: "order_status",
+      officeLocation: "office_location",
+      firstContact: "first_contact",
+      currentPerson: "current_person",
+      previousPerson: "previous_person",
+    };
 
   const normalized = {};
   for (const [key, value] of Object.entries(payload)) {
@@ -258,6 +329,52 @@ function normalizeItemPayload(payload = {}) {
   }
   delete normalized.note;
   return normalized;
+}
+
+function normalizeNewItemPayload(payload = {}, index = 0) {
+  const normalized = normalizeItemPayload(payload);
+  const label = (field) => `items[${index}].${field}`;
+  const result = {
+    snap_plate_number: normalizeRequiredString(
+      normalized.snap_plate_number,
+      20,
+      label("snap_plate_number")
+    ),
+    snap_vin: normalizeRequiredString(normalized.snap_vin, 50, label("snap_vin")),
+    snap_maker: normalizeRequiredString(
+      normalized.snap_maker,
+      50,
+      label("snap_maker")
+    ),
+    snap_model: normalizeRequiredString(
+      normalized.snap_model,
+      50,
+      label("snap_model")
+    ),
+    snap_colour: normalizeRequiredString(
+      normalized.snap_colour,
+      30,
+      label("snap_colour")
+    ),
+    pickup_location: normalizeRequiredString(
+      normalized.pickup_location,
+      100,
+      label("pickup_location")
+    ),
+    delivery_location: normalizeRequiredString(
+      normalized.delivery_location,
+      100,
+      label("delivery_location")
+    ),
+    transfer_status: normalizeItemStatus(normalized.transfer_status),
+    transfer_note: normalizeNote(normalized.transfer_note),
+  };
+  const vehicleValue = normalizeDecimal(
+    normalized.snap_vehicle_value,
+    label("snap_vehicle_value")
+  );
+  result.snap_vehicle_value = vehicleValue === undefined ? null : vehicleValue;
+  return result;
 }
 
 function normalizeRequiredString(value, maxLength, fieldName) {
@@ -367,6 +484,22 @@ function formatOrder(row, items) {
     order_status: row.order_status,
     note: row.note ?? null,
     created_at: toISOString(row.created_at),
+    office_location: row.office_location ?? null,
+    first_contact: row.first_contact ?? null,
+    first_contact_name: buildUserDisplayName(
+      row.first_contact_user_name,
+      row.first_contact_real_name
+    ),
+    current_person: row.current_person ?? null,
+    current_person_name: buildUserDisplayName(
+      row.current_person_user_name,
+      row.current_person_real_name
+    ),
+    previous_person: row.previous_person ?? null,
+    previous_person_name: buildUserDisplayName(
+      row.previous_person_user_name,
+      row.previous_person_real_name
+    ),
     items,
   };
 }
@@ -421,8 +554,18 @@ async function listOrders(req, res) {
 
     const [orderRows] = await conn.query(
       `SELECT o.order_id, o.public_order_code, o.customer_name, o.customer_email,
-              o.customer_phone, o.price_total, o.order_status, o.note, o.created_at
+              o.customer_phone, o.price_total, o.order_status, o.note, o.created_at,
+              o.office_location, o.first_contact, o.current_person, o.previous_person,
+              ufc.user_name AS first_contact_user_name,
+              ufc.real_name AS first_contact_real_name,
+              ucur.user_name AS current_person_user_name,
+              ucur.real_name AS current_person_real_name,
+              uprev.user_name AS previous_person_user_name,
+              uprev.real_name AS previous_person_real_name
          FROM orders o
+         LEFT JOIN users ufc ON ufc.user_id = o.first_contact
+         LEFT JOIN users ucur ON ucur.user_id = o.current_person
+         LEFT JOIN users uprev ON uprev.user_id = o.previous_person
          ${whereSql}
          ORDER BY o.created_at DESC, o.order_id DESC
          LIMIT ? OFFSET ?`,
@@ -505,6 +648,10 @@ async function updateOrder(req, res) {
     "price_total",
     "order_status",
     "note",
+    "office_location",
+    "first_contact",
+    "current_person",
+    "previous_person",
   ];
 
   if (!allowedFields.some((field) => Object.prototype.hasOwnProperty.call(payload, field))) {
@@ -523,7 +670,8 @@ async function updateOrder(req, res) {
     conn = await pool.getConnection();
     const [rows] = await conn.query(
       `SELECT order_id, public_order_code, customer_name, customer_email,
-              customer_phone, price_total, order_status, note, created_at
+              customer_phone, price_total, order_status, note, created_at,
+              office_location, first_contact, current_person, previous_person
          FROM orders WHERE order_id=?`,
       [orderId]
     );
@@ -537,6 +685,7 @@ async function updateOrder(req, res) {
     const params = [];
     const changes = {};
     const normalizedInputs = {};
+    const userCache = new Map();
 
     if (Object.prototype.hasOwnProperty.call(payload, "customer_name")) {
       const value = normalizeRequiredString(payload.customer_name, 100, "customer_name");
@@ -598,6 +747,61 @@ async function updateOrder(req, res) {
       }
     }
 
+    if (Object.prototype.hasOwnProperty.call(payload, "office_location")) {
+      const value = normalizeOptionalString(payload.office_location, 100);
+      normalizedInputs.office_location = value;
+      if (!isSameValue(before.office_location, value)) {
+        updates.push("office_location=?");
+        params.push(value);
+        changes.office_location = { old: before.office_location, new: value };
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, "first_contact")) {
+      const value = await resolveUserReference(
+        conn,
+        userCache,
+        payload.first_contact,
+        "first_contact"
+      );
+      normalizedInputs.first_contact = value;
+      if (!isSameValue(before.first_contact, value)) {
+        updates.push("first_contact=?");
+        params.push(value);
+        changes.first_contact = { old: before.first_contact, new: value };
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, "current_person")) {
+      const value = await resolveUserReference(
+        conn,
+        userCache,
+        payload.current_person,
+        "current_person"
+      );
+      normalizedInputs.current_person = value;
+      if (!isSameValue(before.current_person, value)) {
+        updates.push("current_person=?");
+        params.push(value);
+        changes.current_person = { old: before.current_person, new: value };
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, "previous_person")) {
+      const value = await resolveUserReference(
+        conn,
+        userCache,
+        payload.previous_person,
+        "previous_person"
+      );
+      normalizedInputs.previous_person = value;
+      if (!isSameValue(before.previous_person, value)) {
+        updates.push("previous_person=?");
+        params.push(value);
+        changes.previous_person = { old: before.previous_person, new: value };
+      }
+    }
+
     if (!updates.length) {
       const itemsMap = await fetchOrderItemsMap(conn, [orderId]);
       const responseOrder = formatOrder(before, itemsMap.get(orderId) || []);
@@ -610,9 +814,20 @@ async function updateOrder(req, res) {
     );
 
     const [afterRows] = await conn.query(
-      `SELECT order_id, public_order_code, customer_name, customer_email,
-              customer_phone, price_total, order_status, note, created_at
-         FROM orders WHERE order_id=?`,
+      `SELECT o.order_id, o.public_order_code, o.customer_name, o.customer_email,
+              o.customer_phone, o.price_total, o.order_status, o.note, o.created_at,
+              o.office_location, o.first_contact, o.current_person, o.previous_person,
+              ufc.user_name AS first_contact_user_name,
+              ufc.real_name AS first_contact_real_name,
+              ucur.user_name AS current_person_user_name,
+              ucur.real_name AS current_person_real_name,
+              uprev.user_name AS previous_person_user_name,
+              uprev.real_name AS previous_person_real_name
+         FROM orders o
+         LEFT JOIN users ufc ON ufc.user_id = o.first_contact
+         LEFT JOIN users ucur ON ucur.user_id = o.current_person
+         LEFT JOIN users uprev ON uprev.user_id = o.previous_person
+        WHERE o.order_id=?`,
       [orderId]
     );
     const after = afterRows[0];
@@ -620,10 +835,20 @@ async function updateOrder(req, res) {
     const itemsMap = await fetchOrderItemsMap(conn, [orderId]);
     const formatted = formatOrder(after, itemsMap.get(orderId) || []);
 
-    const changeCount = Object.keys(changes).length;
+    const changeKeys = Object.keys(changes);
+    const changeCount = changeKeys.length;
     if (changeCount) {
-      const action =
-        changes.order_status && changeCount === 1 ? "STATUS_CHANGE" : "UPDATE";
+      const assignmentFields = new Set([
+        "first_contact",
+        "current_person",
+        "previous_person",
+      ]);
+      const assignOnly = changeKeys.every((key) => assignmentFields.has(key));
+      const action = assignOnly
+        ? "ASSIGN"
+        : changes.order_status && changeCount === 1
+        ? "STATUS_CHANGE"
+        : "UPDATE";
       try {
         await logOperation({
           req,
@@ -651,6 +876,253 @@ async function updateOrder(req, res) {
       return res.status(404).json({ ok: false, error: err.message });
     }
     console.error("[orders.updateOrder]", err);
+    res.status(500).json({ ok: false, error: err.message });
+  } finally {
+    if (conn) {
+      conn.release();
+    }
+  }
+}
+
+async function createOrder(req, res) {
+  const body = req.body || {};
+  const payload = normalizeOrderPayload(body);
+  const itemsInput = Array.isArray(body.items) ? body.items : [];
+
+  if (!itemsInput.length) {
+    return res.status(400).json({ ok: false, error: "At least one item is required" });
+  }
+
+  const pool = getPool("orders");
+  if (!pool) {
+    return res.status(500).json({ ok: false, error: "Orders database not configured" });
+  }
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
+
+    const customer_name = normalizeRequiredString(
+      payload.customer_name,
+      100,
+      "customer_name"
+    );
+    const customer_email = normalizeRequiredString(
+      payload.customer_email,
+      255,
+      "customer_email"
+    );
+    const customer_phone = normalizeRequiredString(
+      payload.customer_phone,
+      50,
+      "customer_phone"
+    );
+    const order_status = payload.order_status
+      ? normalizeOrderStatus(payload.order_status)
+      : "AwaitingManualQuote";
+    const note = normalizeNote(payload.note);
+    const price_total =
+      payload.price_total !== undefined
+        ? normalizeDecimal(payload.price_total, "price_total")
+        : null;
+    const office_location =
+      payload.office_location !== undefined
+        ? normalizeOptionalString(payload.office_location, 100)
+        : null;
+
+    const userCache = new Map();
+    const first_contact = Object.prototype.hasOwnProperty.call(
+      payload,
+      "first_contact"
+    )
+      ? await resolveUserReference(
+          conn,
+          userCache,
+          payload.first_contact,
+          "first_contact"
+        )
+      : null;
+    const current_person = Object.prototype.hasOwnProperty.call(
+      payload,
+      "current_person"
+    )
+      ? await resolveUserReference(
+          conn,
+          userCache,
+          payload.current_person,
+          "current_person"
+        )
+      : null;
+    const previous_person = Object.prototype.hasOwnProperty.call(
+      payload,
+      "previous_person"
+    )
+      ? await resolveUserReference(
+          conn,
+          userCache,
+          payload.previous_person,
+          "previous_person"
+        )
+      : null;
+
+    let public_order_code = toNullableString(payload.public_order_code, 50);
+    if (public_order_code) {
+      const [rows] = await conn.query(
+        "SELECT order_id FROM orders WHERE public_order_code=? LIMIT 1",
+        [public_order_code]
+      );
+      if (rows.length) {
+        throw validationError("public_order_code already exists");
+      }
+    } else {
+      public_order_code = await generateOrderCode(conn);
+    }
+
+    const orderColumns = [
+      "public_order_code",
+      "customer_name",
+      "customer_email",
+      "customer_phone",
+      "price_total",
+      "order_status",
+      "note",
+      "office_location",
+      "first_contact",
+      "current_person",
+      "previous_person",
+    ];
+    const orderValues = [
+      public_order_code,
+      customer_name,
+      customer_email,
+      customer_phone,
+      price_total,
+      order_status,
+      note,
+      office_location,
+      first_contact,
+      current_person,
+      previous_person,
+    ];
+
+    const placeholders = orderColumns.map(() => "?").join(", ");
+    const [orderResult] = await conn.query(
+      `INSERT INTO orders (${orderColumns.join(", ")}) VALUES (${placeholders})`,
+      orderValues
+    );
+    const orderId = orderResult.insertId;
+
+    const createdItems = [];
+    for (let i = 0; i < itemsInput.length; i += 1) {
+      const item = normalizeNewItemPayload(itemsInput[i], i);
+      const itemColumns = [
+        "order_id",
+        "snap_plate_number",
+        "snap_vin",
+        "snap_maker",
+        "snap_model",
+        "snap_colour",
+        "snap_vehicle_value",
+        "pickup_location",
+        "delivery_location",
+        "transfer_status",
+        "transfer_note",
+      ];
+      const itemValues = [
+        orderId,
+        item.snap_plate_number,
+        item.snap_vin,
+        item.snap_maker,
+        item.snap_model,
+        item.snap_colour,
+        item.snap_vehicle_value,
+        item.pickup_location,
+        item.delivery_location,
+        item.transfer_status,
+        item.transfer_note,
+      ];
+      const itemPlaceholders = itemColumns.map(() => "?").join(", ");
+      const [itemResult] = await conn.query(
+        `INSERT INTO order_items (${itemColumns.join(", ")}) VALUES (${itemPlaceholders})`,
+        itemValues
+      );
+      createdItems.push({ ...item, item_id: itemResult.insertId });
+    }
+
+    const [orderRows] = await conn.query(
+      `SELECT o.order_id, o.public_order_code, o.customer_name, o.customer_email,
+              o.customer_phone, o.price_total, o.order_status, o.note, o.created_at,
+              o.office_location, o.first_contact, o.current_person, o.previous_person,
+              ufc.user_name AS first_contact_user_name,
+              ufc.real_name AS first_contact_real_name,
+              ucur.user_name AS current_person_user_name,
+              ucur.real_name AS current_person_real_name,
+              uprev.user_name AS previous_person_user_name,
+              uprev.real_name AS previous_person_real_name
+         FROM orders o
+         LEFT JOIN users ufc ON ufc.user_id = o.first_contact
+         LEFT JOIN users ucur ON ucur.user_id = o.current_person
+         LEFT JOIN users uprev ON uprev.user_id = o.previous_person
+        WHERE o.order_id = ?`,
+      [orderId]
+    );
+
+    await conn.commit();
+
+    const inserted = orderRows[0];
+    const itemsMap = await fetchOrderItemsMap(conn, [orderId]);
+    const formatted = formatOrder(inserted, itemsMap.get(orderId) || []);
+
+    try {
+      await logOperation({
+        req,
+        action: "CREATE",
+        entityType: "ORDER",
+        entityId: orderId,
+        orderId,
+        details: {
+          order_id: orderId,
+          public_order_code,
+          created: {
+            order: {
+              customer_name,
+              customer_email,
+              customer_phone,
+              price_total,
+              order_status,
+              note,
+              office_location,
+              first_contact,
+              current_person,
+              previous_person,
+            },
+            items: createdItems.map((item) => ({
+              item_id: item.item_id,
+              transfer_status: item.transfer_status,
+              pickup_location: item.pickup_location,
+              delivery_location: item.delivery_location,
+            })),
+          },
+        },
+      });
+    } catch (logErr) {
+      console.error("[orders.createOrder][logOperation]", logErr);
+    }
+
+    res.status(201).json({ ok: true, data: formatted });
+  } catch (err) {
+    if (conn) {
+      try {
+        await conn.rollback();
+      } catch (rollbackErr) {
+        console.error("[orders.createOrder][rollback]", rollbackErr);
+      }
+    }
+    if (err?.isValidation) {
+      return res.status(400).json({ ok: false, error: err.message });
+    }
+    console.error("[orders.createOrder]", err);
     res.status(500).json({ ok: false, error: err.message });
   } finally {
     if (conn) {
@@ -895,6 +1367,7 @@ async function updateItemStatus(req, res) {
 module.exports = {
   listOrders,
   getTransferStatusOptions,
+  createOrder,
   updateOrder,
   updateItem,
   updateItemStatus,

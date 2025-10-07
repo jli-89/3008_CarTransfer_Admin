@@ -259,6 +259,7 @@ r.use(verifyToken); // [NEW]r.use(verifyToken);                 // 下面的受�
 // app.get("/api/meta/transfer-status-options", Orders.getTransferStatusOptions);
 // app.put("/api/items/:itemId/transfer_status", Orders.updateItemStatus);
 r.get("/api/orders", Orders.listOrders);
+r.post("/api/orders", Orders.createOrder);
 r.get("/api/meta/transfer-status-options", Orders.getTransferStatusOptions);
 r.put("/api/orders/:orderId", Orders.updateOrder);
 r.put("/api/items/:itemId", Orders.updateItem);

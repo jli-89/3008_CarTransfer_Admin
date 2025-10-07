@@ -15,6 +15,9 @@ import {
   UpdateItemPayload,
   UpdateOrderPayload,
   ITEM_STATUS_OPTIONS,
+  CreateOrderPayload,
+  CreateOrderItemPayload,
+  OrderUserOption,
 } from './order-management.service';
 
 interface FiltersState {
@@ -32,6 +35,10 @@ interface OrderEditForm {
   price_total: string;
   order_status: OrderStatus | '';
   note: string;
+  office_location: string;
+  first_contact: string;
+  current_person: string;
+  previous_person: string;
 }
 
 interface ItemEditForm {
@@ -45,6 +52,33 @@ interface ItemEditForm {
   snap_model: string;
   snap_colour: string;
   snap_vehicle_value: string;
+}
+
+interface NewOrderItemForm {
+  snap_plate_number: string;
+  snap_vin: string;
+  snap_maker: string;
+  snap_model: string;
+  snap_colour: string;
+  pickup_location: string;
+  delivery_location: string;
+  transfer_status: ItemStatus | '';
+  transfer_note: string;
+  snap_vehicle_value: string;
+}
+
+interface NewOrderForm {
+  public_order_code: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  price_total: string;
+  order_status: OrderStatus;
+  note: string;
+  office_location: string;
+  first_contact: string;
+  current_person: string;
+  previous_person: string;
 }
 
 @Component({
@@ -71,6 +105,13 @@ export class OrderManagementComponent implements OnInit {
 
   readonly orderStatusOptions = ORDER_STATUS_OPTIONS;
   itemStatusOptions: string[] = [...ITEM_STATUS_OPTIONS];
+  staffOptions: OrderUserOption[] = [];
+
+  showCreateForm = false;
+  newOrderForm: NewOrderForm = this.createEmptyNewOrderForm();
+  newOrderItems: NewOrderItemForm[] = [this.createEmptyNewOrderItem()];
+  newOrderError: string | null = null;
+  isCreatingOrder = false;
 
   expandedOrders = new Set<number>();
 
@@ -92,6 +133,7 @@ export class OrderManagementComponent implements OnInit {
 
   ngOnInit(): void {
     this.fetchItemStatusOptions();
+    this.loadStaffOptions();
     this.loadOrders();
   }
 
@@ -104,6 +146,17 @@ export class OrderManagementComponent implements OnInit {
       },
       error: () => {
         // fallback to default constant already set
+      }
+    });
+  }
+
+  loadStaffOptions(): void {
+    this.orderService.listAssignableUsers().subscribe({
+      next: (users) => {
+        this.staffOptions = users;
+      },
+      error: () => {
+        this.staffOptions = [];
       }
     });
   }
@@ -194,6 +247,143 @@ export class OrderManagementComponent implements OnInit {
     return this.expandedOrders.has(orderId);
   }
 
+  openCreateOrderForm(): void {
+    this.showCreateForm = true;
+    this.newOrderError = null;
+    this.newOrderForm = this.createEmptyNewOrderForm();
+    this.newOrderItems = [this.createEmptyNewOrderItem()];
+  }
+
+  cancelCreateOrder(): void {
+    this.showCreateForm = false;
+    this.newOrderError = null;
+    this.newOrderForm = this.createEmptyNewOrderForm();
+    this.newOrderItems = [this.createEmptyNewOrderItem()];
+  }
+
+  addNewOrderItemRow(): void {
+    this.newOrderItems.push(this.createEmptyNewOrderItem());
+  }
+
+  removeNewOrderItemRow(index: number): void {
+    if (this.newOrderItems.length === 1) {
+      return;
+    }
+    this.newOrderItems.splice(index, 1);
+  }
+
+  submitNewOrder(): void {
+    this.newOrderError = null;
+
+    const form = this.newOrderForm;
+    const customerName = form.customer_name.trim();
+    const customerEmail = form.customer_email.trim();
+    const customerPhone = form.customer_phone.trim();
+
+    if (!customerName || !customerEmail || !customerPhone) {
+      this.newOrderError = 'Name, email, and phone are required.';
+      return;
+    }
+
+    if (!this.newOrderItems.length) {
+      this.newOrderError = 'Please add at least one item.';
+      return;
+    }
+
+    const publicCode = form.public_order_code.trim();
+    const price = form.price_total.trim();
+    const note = form.note.trim();
+    const office = form.office_location.trim();
+
+    const firstContact = this.parseUserSelectionValue(form.first_contact);
+    if (firstContact === undefined) {
+      this.newOrderError = 'First contact must be a valid user.';
+      return;
+    }
+
+    const currentPerson = this.parseUserSelectionValue(form.current_person);
+    if (currentPerson === undefined) {
+      this.newOrderError = 'Current handler must be a valid user.';
+      return;
+    }
+
+    const previousPerson = this.parseUserSelectionValue(form.previous_person);
+    if (previousPerson === undefined) {
+      this.newOrderError = 'Previous handler must be a valid user.';
+      return;
+    }
+
+    const items: CreateOrderItemPayload[] = [];
+    for (let i = 0; i < this.newOrderItems.length; i += 1) {
+      const item = this.newOrderItems[i];
+      const plate = item.snap_plate_number.trim();
+      const vin = item.snap_vin.trim();
+      const maker = item.snap_maker.trim();
+      const model = item.snap_model.trim();
+      const colour = item.snap_colour.trim();
+      const pickup = item.pickup_location.trim();
+      const delivery = item.delivery_location.trim();
+      const status = item.transfer_status;
+
+      if (!plate || !vin || !maker || !model || !colour || !pickup || !delivery || !status) {
+        this.newOrderError = `Item #${i + 1} is missing required fields.`;
+        return;
+      }
+
+      const vehicleValue = item.snap_vehicle_value.trim();
+      if (vehicleValue && Number.isNaN(Number(vehicleValue))) {
+        this.newOrderError = `Vehicle value for item #${i + 1} must be numeric.`;
+        return;
+      }
+
+      items.push({
+        snap_plate_number: plate,
+        snap_vin: vin,
+        snap_maker: maker,
+        snap_model: model,
+        snap_colour: colour,
+        pickup_location: pickup,
+        delivery_location: delivery,
+        transfer_status: status as ItemStatus,
+        transfer_note: item.transfer_note.trim() ? item.transfer_note.trim() : undefined,
+        snap_vehicle_value: vehicleValue ? vehicleValue : undefined,
+      });
+    }
+
+    const payload: CreateOrderPayload = {
+      customer_name: customerName,
+      customer_email: customerEmail,
+      customer_phone: customerPhone,
+      order_status: form.order_status,
+      items,
+    };
+
+    if (publicCode) {
+      payload.public_order_code = publicCode;
+    }
+    payload.price_total = price ? price : undefined;
+    payload.note = note ? note : undefined;
+    payload.office_location = office ? office : undefined;
+    payload.first_contact = firstContact;
+    payload.current_person = currentPerson;
+    payload.previous_person = previousPerson;
+
+    this.isCreatingOrder = true;
+
+    this.orderService
+      .createOrder(payload)
+      .pipe(finalize(() => (this.isCreatingOrder = false)))
+      .subscribe({
+        next: () => {
+          this.cancelCreateOrder();
+          this.loadOrders();
+        },
+        error: (error) => {
+          this.newOrderError = this.toErrorMessage(error, 'Failed to create order.');
+        }
+      });
+  }
+
   openOrderEdit(order: OrderRecord): void {
     this.editingOrderId = order.order_id;
     this.orderEditError = null;
@@ -203,7 +393,11 @@ export class OrderManagementComponent implements OnInit {
       customer_phone: order.customer_phone || '',
       price_total: this.toDecimalString(order.price_total),
       order_status: order.order_status,
-      note: order.note || ''
+      note: order.note || '',
+      office_location: order.office_location || '',
+      first_contact: order.first_contact ? String(order.first_contact) : '',
+      current_person: order.current_person ? String(order.current_person) : '',
+      previous_person: order.previous_person ? String(order.previous_person) : '',
     };
   }
 
@@ -241,6 +435,30 @@ export class OrderManagementComponent implements OnInit {
 
     const note = form.note.trim();
     payload.note = note ? note : null;
+
+    const office = form.office_location.trim();
+    payload.office_location = office ? office : null;
+
+    const firstContact = this.parseUserSelectionValue(form.first_contact);
+    if (firstContact === undefined) {
+      this.orderEditError = 'First contact must be a valid user.';
+      return;
+    }
+    payload.first_contact = firstContact;
+
+    const currentPerson = this.parseUserSelectionValue(form.current_person);
+    if (currentPerson === undefined) {
+      this.orderEditError = 'Current handler must be a valid user.';
+      return;
+    }
+    payload.current_person = currentPerson;
+
+    const previousPerson = this.parseUserSelectionValue(form.previous_person);
+    if (previousPerson === undefined) {
+      this.orderEditError = 'Previous handler must be a valid user.';
+      return;
+    }
+    payload.previous_person = previousPerson;
 
     this.isSavingOrder = true;
     this.orderEditError = null;
@@ -353,6 +571,48 @@ export class OrderManagementComponent implements OnInit {
 
   trackByItemId(_: number, item: OrderItemRecord): number {
     return item.item_id;
+  }
+
+  private createEmptyNewOrderForm(): NewOrderForm {
+    return {
+      public_order_code: '',
+      customer_name: '',
+      customer_email: '',
+      customer_phone: '',
+      price_total: '',
+      order_status: this.orderStatusOptions[0] ?? 'AwaitingManualQuote',
+      note: '',
+      office_location: '',
+      first_contact: '',
+      current_person: '',
+      previous_person: '',
+    };
+  }
+
+  private createEmptyNewOrderItem(): NewOrderItemForm {
+    return {
+      snap_plate_number: '',
+      snap_vin: '',
+      snap_maker: '',
+      snap_model: '',
+      snap_colour: '',
+      pickup_location: '',
+      delivery_location: '',
+      transfer_status: '',
+      transfer_note: '',
+      snap_vehicle_value: '',
+    };
+  }
+
+  private parseUserSelectionValue(value: string): number | null | undefined {
+    if (!value) {
+      return null;
+    }
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      return undefined;
+    }
+    return parsed;
   }
 
   private toDecimalString(value: number | null | undefined): string {
