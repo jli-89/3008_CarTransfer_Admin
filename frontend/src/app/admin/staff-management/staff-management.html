@@ -20,7 +20,6 @@
     <select [(ngModel)]="newStaff.role">
       <option value="staff">Staff</option>
       <option value="admin">Admin</option>
-      <option value="superadmin">Superadmin</option>
     </select>
 
     <label>Username:</label>
@@ -52,6 +51,7 @@
       <option value="staff">Staff</option>
       <option value="admin">Admin</option>
       <option value="superadmin">Superadmin</option>
+      <option value="deleted employees">Deleted Employees</option>
     </select>
 
     <label>Username:</label>
@@ -94,7 +94,7 @@
         <td>{{ staff.id }}</td>
         <td>{{ staff.name }}</td>
         <td>{{ staff.email }}</td>
-        <td>{{ staff.role | titlecase }}</td>
+        <td>{{ staff.role === 'deleted employees' ? 'Deleted Employees' : (staff.role | titlecase) }}</td>
         <td>{{ staff.username }}</td>
         <td>{{ staff.status | titlecase }}</td>
         <td>{{ staff.officeLocation || 'N/A' }}</td>
@@ -128,8 +128,8 @@
 
   <!-- 顯示切換：預設顯示在職；點擊切換為只顯示離職 -->
   <div style="margin: 8px 0;">
-    <button type="button" class="toggle" (click)="showFormerOnly = !showFormerOnly">
-      {{ showFormerOnly ? '顯示在職人員' : '只顯示離職人員' }}
+    <button type="button" class="toggle" (click)="showDeletedOnly = !showDeletedOnly">
+      {{ showDeletedOnly ? 'Show Active Staff' : 'Show Deleted Employees' }}
     </button>
   </div>
 
@@ -146,9 +146,6 @@
     <select [(ngModel)]="newStaff.role">
       <option value="staff">Staff</option>
       <option value="admin">Admin</option>
-      <option value="superadmin">Superadmin</option>
-      <!-- 新增：可選 Former Employees -->
-      <option value="former employees">Former Employees</option>
     </select>
 
     <label>Username:</label>
@@ -180,8 +177,7 @@
       <option value="staff">Staff</option>
       <option value="admin">Admin</option>
       <option value="superadmin">Superadmin</option>
-      <!-- 新增：可選 Former Employees -->
-      <option value="former employees">Former Employees</option>
+      <option value="deleted employees">Deleted Employees</option>
     </select>
 
     <label>Username:</label>
@@ -225,7 +221,7 @@
         <td>{{ staff.id }}</td>
         <td>{{ staff.name }}</td>
         <td>{{ staff.email }}</td>
-        <td>{{ staff.role | titlecase }}</td>
+        <td>{{ staff.role === 'deleted employees' ? 'Deleted Employees' : (staff.role | titlecase) }}</td>
         <td>{{ staff.username }}</td>
         <td>{{ staff.status | titlecase }}</td>
         <td>{{ staff.officeLocation || 'N/A' }}</td>
@@ -240,7 +236,7 @@
           <!-- <button type="button" class="delete" (click)="deleteStaff(staff)">Delete</button> -->
 
           <!-- 新增：離職（把 user_group 設為 former employees） -->
-          <button type="button" class="delete" (click)="markAsFormer(staff)">離職</button>
+          <button type="button" class="delete" (click)="markAsDeleted(staff)">Delete</button>
         </td>
       </tr>
     </tbody>
@@ -251,3 +247,6 @@
     No staff records found.
   </div>
 </div>
+
+
+

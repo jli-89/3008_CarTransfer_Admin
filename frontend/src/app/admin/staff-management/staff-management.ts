@@ -1,4 +1,4 @@
-﻿// app/admin/staff-management/staff-management.ts
+// app/admin/staff-management/staff-management.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -55,8 +55,8 @@ export class StaffManagementComponent implements OnInit {
   isUpdating = false;
   errorMessage: string | null = null;
 
-  /** 是否只顯示離職（former employees） */
-  showFormerOnly = false;
+  /** Toggle between active staff and deleted employees */
+  showDeletedOnly = false;
 
   newStaff: StaffFormState = this.createEmptyForm();
 
@@ -69,11 +69,11 @@ export class StaffManagementComponent implements OnInit {
     this.fetchStaff();
   }
 
-  /** 依照 showFormerOnly 過濾清單 */
+  /** Filter list based on the deleted toggle */
   filteredStaffList(): StaffRow[] {
     return this.staffList.filter(row =>
-      this.showFormerOnly ? row.role === 'former employees'
-                          : row.role !== 'former employees'
+      this.showDeletedOnly ? row.role === 'deleted employees'
+                          : row.role !== 'deleted employees'
     );
   }
 
@@ -104,8 +104,12 @@ export class StaffManagementComponent implements OnInit {
     }
 
     const role = (this.newStaff.role || 'staff').toLowerCase() as StaffRole;
+    if (role !== 'admin' && role !== 'staff') {
+      this.errorMessage = 'Role must be admin or staff.';
+      return;
+    }
     if (!this.isValidRole(role)) {
-      this.errorMessage = 'Role must be admin, staff, or superadmin.';
+      this.errorMessage = 'Role must be admin, staff, superadmin, or deleted employees.';
       return;
     }
 
@@ -172,7 +176,7 @@ export class StaffManagementComponent implements OnInit {
     }
 
     if (!this.isValidRole(role)) {
-      this.errorMessage = 'Role must be admin, staff, or superadmin.';
+      this.errorMessage = 'Role must be admin, staff, superadmin, or deleted employees.';
       return;
     }
 
@@ -258,26 +262,27 @@ export class StaffManagementComponent implements OnInit {
     });
   }
 
-  /** 新增：標記離職 */
-  markAsFormer(staff: StaffRow): void {
+  /** ??:???? */
+  markAsDeleted(staff: StaffRow): void {
     this.errorMessage = null;
     this.isUpdating = true;
 
     this.staffService
-      .markAsFormer(staff.id)
+      .markAsDeleted(staff.id)
       .pipe(finalize(() => (this.isUpdating = false)))
       .subscribe({
         next: () => {
           this.staffList = this.staffList.map((row) =>
-            row.id === staff.id ? { ...row, role: 'former employees' } : row
+            row.id === staff.id ? { ...row, role: 'deleted employees', status: 'inactive' } : row
           );
 
           if (this.editingStaffId === staff.id && this.editStaff) {
-            this.editStaff.role = 'former employees';
+            this.editStaff.role = 'deleted employees';
+            this.editStaff.status = 'inactive';
           }
         },
         error: (error) => {
-          this.errorMessage = this.toErrorMessage(error, 'Failed to mark as former.');
+          this.errorMessage = this.toErrorMessage(error, 'Failed to mark as deleted.');
         }
       });
   }
@@ -323,12 +328,14 @@ export class StaffManagementComponent implements OnInit {
     const realName = user.real_name?.trim() || null;
     const officeLocation = user.office_location?.trim() || null;
 
+    const normalizedRole: StaffRole = (user.user_group === 'former employees' ? 'deleted employees' : user.user_group) as StaffRole;
+
     return {
       id: user.user_id,
       name: realName || user.user_name,
       realName,
       email: user.email,
-      role: user.user_group,
+      role: normalizedRole,
       username: user.user_name,
       status: user.status,
       officeLocation
@@ -348,7 +355,7 @@ export class StaffManagementComponent implements OnInit {
 
   private isValidRole(role: string): role is StaffRole {
     //return role === 'staff' || role === 'admin' || role === 'superadmin';
-    return role === 'staff' || role === 'admin' || role === 'superadmin' || role === 'former employees';// v2.1.1 新增 former employees 在v2.1.0之後增加
+    return role === 'staff' || role === 'admin' || role === 'superadmin' || role === 'deleted employees';
   }
 
   private isValidStatus(status: string): status is StaffStatus {

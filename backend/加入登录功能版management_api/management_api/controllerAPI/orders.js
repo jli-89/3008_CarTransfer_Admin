@@ -278,17 +278,16 @@ function isSameValue(oldVal, newVal) {
 }
 
 function normalizeOrderPayload(payload = {}) {
-    const aliasMap = {
-      customerName: "customer_name",
-      customerEmail: "customer_email",
-      customerPhone: "customer_phone",
-      priceTotal: "price_total",
-      orderStatus: "order_status",
-      officeLocation: "office_location",
-      firstContact: "first_contact",
-      currentPerson: "current_person",
-      previousPerson: "previous_person",
-    };
+  const aliasMap = {
+    customerName: "customer_name",
+    customerEmail: "customer_email",
+    customerPhone: "customer_phone",
+    priceTotal: "price_total",
+    orderStatus: "order_status",
+    officeLocation: "office_location",
+    currentPerson: "current_person",
+    previousPerson: "previous_person",
+  };
 
   const normalized = {};
   for (const [key, value] of Object.entries(payload)) {
@@ -649,7 +648,6 @@ async function updateOrder(req, res) {
     "order_status",
     "note",
     "office_location",
-    "first_contact",
     "current_person",
     "previous_person",
   ];
@@ -757,20 +755,7 @@ async function updateOrder(req, res) {
       }
     }
 
-    if (Object.prototype.hasOwnProperty.call(payload, "first_contact")) {
-      const value = await resolveUserReference(
-        conn,
-        userCache,
-        payload.first_contact,
-        "first_contact"
-      );
-      normalizedInputs.first_contact = value;
-      if (!isSameValue(before.first_contact, value)) {
-        updates.push("first_contact=?");
-        params.push(value);
-        changes.first_contact = { old: before.first_contact, new: value };
-      }
-    }
+
 
     if (Object.prototype.hasOwnProperty.call(payload, "current_person")) {
       const value = await resolveUserReference(
@@ -839,7 +824,6 @@ async function updateOrder(req, res) {
     const changeCount = changeKeys.length;
     if (changeCount) {
       const assignmentFields = new Set([
-        "first_contact",
         "current_person",
         "previous_person",
       ]);
@@ -932,17 +916,16 @@ async function createOrder(req, res) {
         : null;
 
     const userCache = new Map();
-    const first_contact = Object.prototype.hasOwnProperty.call(
-      payload,
+    const requesterUserId = Number(req.jwt?.uid);
+    if (!Number.isInteger(requesterUserId) || requesterUserId <= 0) {
+      throw validationError("first_contact requires an authenticated user");
+    }
+    const first_contact = await resolveUserReference(
+      conn,
+      userCache,
+      requesterUserId,
       "first_contact"
-    )
-      ? await resolveUserReference(
-          conn,
-          userCache,
-          payload.first_contact,
-          "first_contact"
-        )
-      : null;
+    );
     const current_person = Object.prototype.hasOwnProperty.call(
       payload,
       "current_person"
@@ -1372,3 +1355,4 @@ module.exports = {
   updateItem,
   updateItemStatus,
 };
+

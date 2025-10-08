@@ -313,7 +313,7 @@ r.delete("/api/users/:id", Users.deleteUser);
 r.put("/api/users/:id", Users.updateUser);
 r.put("/api/users/:id/status", Users.updateStatus);
 r.put("/api/users/:id/password", Users.resetPassword);
-r.put("/api/users/:id/mark-former", Users.markFormer); // v2.1.1新增 新增于v2.1.0之后
+r.put("/api/users/:id/mark-deleted", Users.markDeleted); // v2.1.1新增 新增于v2.1.0之后
 r.get("/api/users", Users.listUsers);
 r.get("/api/users/:id", Users.getUser);
 

@@ -89,14 +89,10 @@
           Office Location
           <input type="text" [(ngModel)]="newOrderForm.office_location" name="newOfficeLocation" />
         </label>
-        <label>
+        <label class="readonly">
           First Contact
-          <select [(ngModel)]="newOrderForm.first_contact" name="newFirstContact">
-            <option value="">Unassigned</option>
-            <option *ngFor="let staff of staffOptions" [value]="staff.user_id">
-              {{ staff.display }}{{ staff.status === 'active' ? '' : ' (inactive)' }}
-            </option>
-          </select>
+          <input type="text" [value]="currentFirstContactLabel" disabled />
+          <small>Automatically assigned to the logged-in user.</small>
         </label>
         <label>
           Current Handler
@@ -262,14 +258,13 @@
                 Office Location
                 <input type="text" [(ngModel)]="orderEditForm!.office_location" name="editOfficeLocation" />
               </label>
-              <label>
+              <label class="readonly">
                 First Contact
-                <select [(ngModel)]="orderEditForm!.first_contact" name="editFirstContact">
-                  <option value="">Unassigned</option>
-                  <option *ngFor="let staff of staffOptions" [value]="staff.user_id">
-                    {{ staff.display }}{{ staff.status === 'active' ? '' : ' (inactive)' }}
-                  </option>
-                </select>
+                <input
+                  type="text"
+                  [value]="order.first_contact_name || (order.first_contact ? ('User #' + order.first_contact) : 'Unassigned')"
+                  disabled
+                />
               </label>
               <label>
                 Current Handler

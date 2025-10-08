@@ -19,6 +19,7 @@ import {
   CreateOrderItemPayload,
   OrderUserOption,
 } from './order-management.service';
+import { AuthService } from '../../auth/auth.service';
 
 interface FiltersState {
   search: string;
@@ -36,7 +37,6 @@ interface OrderEditForm {
   order_status: OrderStatus | '';
   note: string;
   office_location: string;
-  first_contact: string;
   current_person: string;
   previous_person: string;
 }
@@ -76,7 +76,6 @@ interface NewOrderForm {
   order_status: OrderStatus;
   note: string;
   office_location: string;
-  first_contact: string;
   current_person: string;
   previous_person: string;
 }
@@ -123,15 +122,42 @@ export class OrderManagementComponent implements OnInit {
   orderEditError: string | null = null;
   isSavingOrder = false;
 
+  currentUserId: number | null = null;
+  currentUserDisplay = '';
+
+  get currentFirstContactLabel(): string {
+    if (this.currentUserDisplay && this.currentUserId !== null) {
+      return `${this.currentUserDisplay} (#${this.currentUserId})`;
+    }
+    if (this.currentUserDisplay) {
+      return this.currentUserDisplay;
+    }
+    if (this.currentUserId !== null) {
+      return `User #${this.currentUserId}`;
+    }
+    return 'Current user';
+  }
   editingItemId: number | null = null;
   itemEditOrderId: number | null = null;
   itemEditForm: ItemEditForm | null = null;
   itemEditError: string | null = null;
   isSavingItem = false;
 
-  constructor(private orderService: OrderManagementService) {}
+  constructor(private orderService: OrderManagementService, private auth: AuthService) {}
 
   ngOnInit(): void {
+    const authUser = this.auth.getUser<any>();
+    if (authUser) {
+      const maybeId = Number(authUser.user_id);
+      this.currentUserId = Number.isInteger(maybeId) && maybeId > 0 ? maybeId : null;
+      const real = typeof authUser.real_name === 'string' ? authUser.real_name.trim() : '';
+      const uname = typeof authUser.user_name === 'string' ? authUser.user_name.trim() : '';
+      this.currentUserDisplay = real || uname;
+    } else {
+      this.currentUserId = null;
+      this.currentUserDisplay = '';
+    }
+
     this.fetchItemStatusOptions();
     this.loadStaffOptions();
     this.loadOrders();
@@ -295,9 +321,8 @@ export class OrderManagementComponent implements OnInit {
     const note = form.note.trim();
     const office = form.office_location.trim();
 
-    const firstContact = this.parseUserSelectionValue(form.first_contact);
-    if (firstContact === undefined) {
-      this.newOrderError = 'First contact must be a valid user.';
+    if (this.currentUserId === null) {
+      this.newOrderError = 'Unable to determine the logged-in user for first contact.';
       return;
     }
 
@@ -364,7 +389,6 @@ export class OrderManagementComponent implements OnInit {
     payload.price_total = price ? price : undefined;
     payload.note = note ? note : undefined;
     payload.office_location = office ? office : undefined;
-    payload.first_contact = firstContact;
     payload.current_person = currentPerson;
     payload.previous_person = previousPerson;
 
@@ -395,7 +419,6 @@ export class OrderManagementComponent implements OnInit {
       order_status: order.order_status,
       note: order.note || '',
       office_location: order.office_location || '',
-      first_contact: order.first_contact ? String(order.first_contact) : '',
       current_person: order.current_person ? String(order.current_person) : '',
       previous_person: order.previous_person ? String(order.previous_person) : '',
     };
@@ -439,12 +462,6 @@ export class OrderManagementComponent implements OnInit {
     const office = form.office_location.trim();
     payload.office_location = office ? office : null;
 
-    const firstContact = this.parseUserSelectionValue(form.first_contact);
-    if (firstContact === undefined) {
-      this.orderEditError = 'First contact must be a valid user.';
-      return;
-    }
-    payload.first_contact = firstContact;
 
     const currentPerson = this.parseUserSelectionValue(form.current_person);
     if (currentPerson === undefined) {
@@ -583,7 +600,6 @@ export class OrderManagementComponent implements OnInit {
       order_status: this.orderStatusOptions[0] ?? 'AwaitingManualQuote',
       note: '',
       office_location: '',
-      first_contact: '',
       current_person: '',
       previous_person: '',
     };
@@ -638,3 +654,8 @@ export class OrderManagementComponent implements OnInit {
     return fallback;
   }
 }
+
+
+
+
+
