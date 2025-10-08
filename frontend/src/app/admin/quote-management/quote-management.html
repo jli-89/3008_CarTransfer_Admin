@@ -1,0 +1,151 @@
+<div class="quote-management">
+  <h1>Quote Data Management</h1>
+
+  <div *ngIf="message" class="alert alert-success">{{ message }}</div>
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+
+  <section class="card">
+    <header class="card-header">
+      <h2>{{ editingLocationId ? 'Edit Location' : 'Create Location' }}</h2>
+      <button type="button" (click)="startCreateLocation()" class="link-button">New</button>
+    </header>
+    <form class="form-grid" (ngSubmit)="submitLocation()" #locationFormRef="ngForm">
+      <label>
+        City
+        <input type="text" required [(ngModel)]="locationForm.city_name" name="cityName" />
+      </label>
+      <label>
+        State
+        <input type="text" required [(ngModel)]="locationForm.state_code" name="stateCode" />
+      </label>
+      <label>
+        Postcode
+        <input type="text" required [(ngModel)]="locationForm.postcode" name="postcode" />
+      </label>
+      <button type="submit" [disabled]="loadingLocations">
+        {{ editingLocationId ? 'Update' : 'Create' }}
+      </button>
+    </form>
+
+    <div class="table-container" *ngIf="locations.length; else noLocations">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>City</th>
+            <th>State</th>
+            <th>Postcode</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let loc of locations">
+            <td>{{ loc.location_id }}</td>
+            <td>{{ loc.city_name }}</td>
+            <td>{{ loc.state_code }}</td>
+            <td>{{ loc.postcode }}</td>
+            <td class="actions">
+              <button type="button" (click)="editLocation(loc)">Edit</button>
+              <button type="button" class="danger" (click)="deleteLocation(loc)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noLocations>
+      <p class="empty">No locations found.</p>
+    </ng-template>
+  </section>
+
+  <section class="card">
+    <header class="card-header">
+      <h2>{{ editingRoutePriceId ? 'Edit Route Price' : 'Create Route Price' }}</h2>
+      <button type="button" (click)="startCreateRoutePrice()" class="link-button">New</button>
+      <button type="button" (click)="refreshRoutePrices()" class="link-button">Refresh</button>
+    </header>
+    <form class="form-grid" (ngSubmit)="submitRoutePrice()" #routeFormRef="ngForm">
+      <label>
+        Pickup Location
+        <select required [(ngModel)]="routePriceForm.pickup_id" name="pickupId">
+          <option [ngValue]="null">Select...</option>
+          <option *ngFor="let loc of locations" [ngValue]="loc.location_id">
+            {{ loc.city_name }}, {{ loc.state_code }}
+          </option>
+        </select>
+      </label>
+      <label>
+        Delivery Location
+        <select required [(ngModel)]="routePriceForm.delivery_id" name="deliveryId">
+          <option [ngValue]="null">Select...</option>
+          <option *ngFor="let loc of locations" [ngValue]="loc.location_id">
+            {{ loc.city_name }}, {{ loc.state_code }}
+          </option>
+        </select>
+      </label>
+      <label>
+        Vehicle Type
+        <select required [(ngModel)]="routePriceForm.vehicle_type_id" name="vehicleTypeId">
+          <option [ngValue]="null">Select...</option>
+          <option *ngFor="let vt of vehicleTypes" [ngValue]="vt.vehicle_type_id">
+            {{ vt.type_code }}
+          </option>
+        </select>
+      </label>
+      <label>
+        Price (AUD)
+        <input type="number" step="0.01" required [(ngModel)]="routePriceForm.price" name="price" />
+      </label>
+      <label>
+        Transit Days
+        <input type="number" min="0" [(ngModel)]="routePriceForm.transit_days" name="transitDays" />
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" [(ngModel)]="routePriceForm.is_backload" name="isBackload" />
+        Backload (discount)
+      </label>
+      <button type="submit" [disabled]="loadingRoutePrices">
+        {{ editingRoutePriceId ? 'Update' : 'Create' }}
+      </button>
+    </form>
+
+    <div class="table-container" *ngIf="routePrices.length; else noRoutes">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Pickup</th>
+            <th>Delivery</th>
+            <th>Vehicle</th>
+            <th>Price</th>
+            <th>Transit Days</th>
+            <th>Backload</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let route of routePrices">
+            <td>{{ route.price_id }}</td>
+            <td>{{ route.pickup_city }} (#{{ route.pickup_id }})</td>
+            <td>{{ route.delivery_city }} (#{{ route.delivery_id }})</td>
+            <td>{{ route.type_code }}</td>
+            <td>{{ route.price | number: '1.2-2' }}</td>
+            <td>{{ route.transit_days ?? '-' }}</td>
+            <td>{{ route.is_backload ? 'Yes' : 'No' }}</td>
+            <td>{{ route.created_at | date: 'short' }}</td>
+            <td class="actions">
+              <button type="button" (click)="editRoutePrice(route)">Edit</button>
+              <button type="button" (click)="toggleBackload(route)">
+                {{ route.is_backload ? 'Mark Standard' : 'Mark Backload' }}
+              </button>
+              <button type="button" class="danger" (click)="deleteRoutePrice(route)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noRoutes>
+      <p class="empty">No route prices found.</p>
+    </ng-template>
+  </section>
+</div>

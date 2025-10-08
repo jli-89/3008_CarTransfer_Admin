@@ -19,5 +19,5 @@ module.exports = {
   mysqlPassword: "123456",
   // Two databases used by the system:
   dbOrders: "car_transport2",
-  dbQuotes: "jli89_car_transport_quotes"
+  dbQuotes: "car_transport_quote"
 };
