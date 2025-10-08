@@ -12,6 +12,7 @@ const Timesheets = require("./controllerAPI/timesheets");
 const DailyReports = require("./controllerAPI/dailyReports");
 const Quotes = require("./controllerAPI/quotes");//用于管理路线的预估报价相关
 const Users = require("./controllerAPI/users");//用于账户登录/鉴权/管理
+const Logs = require("./controllerAPI/logs");
 const { verifyToken } = require("./middleware/auth"); // [NEW] JWT 校验中间件
 
 const app = express();
@@ -291,11 +292,20 @@ r.get("/api/my/timesheets", Timesheets.listMyTimesheets);
 r.get("/api/quotes/locations", Quotes.listLocations);
 r.get("/api/quotes/vehicle-types", Quotes.listVehicleTypes);
 r.get("/api/quotes/route-prices", Quotes.listRoutePrices);
-r.post("/api/quotes/route-prices", Quotes.upsertRoutePrice);
+r.post("/api/quotes/route-prices", Quotes.createRoutePrice);
 r.put("/api/quotes/route-prices/price", Quotes.updateRoutePrice);
+r.put("/api/quotes/route-prices/:priceId", Quotes.updateRoutePrice);
 r.put("/api/quotes/route-prices/backload", Quotes.updateBackload);
+r.patch("/api/quotes/route-prices/:priceId/backload", Quotes.updateBackload);
+r.delete("/api/quotes/route-prices/:priceId", Quotes.deleteRoutePrice);
 r.post("/api/quotes/locations", Quotes.createLocation);
 r.put("/api/quotes/locations", Quotes.updateLocation);
+r.put("/api/quotes/locations/:locationId", Quotes.updateLocation);
+r.delete("/api/quotes/locations/:locationId", Quotes.deleteLocation);
+
+// logs
+r.get("/api/logs/operations", Logs.listOperationLogs);
+r.get("/api/logs/audit", Logs.listAuditLogs);
 
 // users
 r.post("/api/users", Users.createUser);

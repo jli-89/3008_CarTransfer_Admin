@@ -6,6 +6,8 @@ import { ResetPasswordComponent } from './auth/reset-password/reset-password';
 import { authGuard } from './auth/auth.guard';
 
 import { AdminDashboardComponent } from './admin/dashboard/admin-dashboard';
+import { QuoteManagementComponent } from './admin/quote-management/quote-management';
+import { LogViewerComponent } from './admin/log-viewer/log-viewer';
 import { StaffManagementComponent } from './admin/staff-management/staff-management';
 import { StaffActivityComponent } from './admin/staff-activity/staff-activity';
 import { DailyReportListComponent } from './admin/daily-reports/daily-report-list';
@@ -33,6 +35,8 @@ export const routes: Routes = [
   { path: 'admin/dashboard', component: AdminDashboardComponent, canActivate: [authGuard] },
   { path: 'admin/staff-management', component: StaffManagementComponent, canActivate: [authGuard] },
   { path: 'admin/order-management', component: OrderManagementComponent, canActivate: [authGuard] },
+  { path: 'admin/quote-management', component: QuoteManagementComponent, canActivate: [authGuard] },
+  { path: 'admin/log-viewer', component: LogViewerComponent, canActivate: [authGuard] },
   { path: 'admin/timesheets', component: TimesheetListComponent, canActivate: [authGuard] },
   { path: 'admin/timesheets/new', component: TimesheetCreateComponent, canActivate: [authGuard] },
   { path: 'admin/my-timesheets', component: TimesheetHistoryComponent, canActivate: [authGuard] },

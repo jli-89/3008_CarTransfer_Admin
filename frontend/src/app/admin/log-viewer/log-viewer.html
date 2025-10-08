@@ -1,0 +1,159 @@
+<div class="log-viewer">
+  <h1>System Log Viewer</h1>
+
+  <form class="filter-grid" (ngSubmit)="applyFilters()">
+    <label>
+      Start Date
+      <input type="date" [(ngModel)]="filters.start" name="startDate" />
+    </label>
+    <label>
+      End Date
+      <input type="date" [(ngModel)]="filters.end" name="endDate" />
+    </label>
+    <label>
+      Action
+      <select [(ngModel)]="filters.action" name="action">
+        <option *ngFor="let action of operationActions" [value]="action">{{ action || 'Any' }}</option>
+      </select>
+    </label>
+    <label>
+      Entity / Event Type
+      <select [(ngModel)]="filters.entityType" name="entityType">
+        <option [value]="''">Any</option>
+        <optgroup label="Operation Entities">
+          <option *ngFor="let entity of operationEntityTypes" [value]="entity" [hidden]="!entity">{{ entity }}</option>
+        </optgroup>
+        <optgroup label="Audit Events">
+          <option *ngFor="let event of auditEventTypes" [value]="event" [hidden]="!event">{{ event }}</option>
+        </optgroup>
+      </select>
+    </label>
+    <label>
+      Actor
+      <input type="text" [(ngModel)]="filters.actor" name="actor" placeholder="Name or ID" />
+    </label>
+    <div class="filter-actions">
+      <button type="submit">Apply Filters</button>
+      <button type="button" class="link-button" (click)="refreshAll()">Refresh</button>
+    </div>
+  </form>
+
+  <section *ngFor="let source of operationSources" class="card">
+    <header class="card-header">
+      <h2>
+        Operation Logs —
+        {{ source === 'car_transport2' ? 'car_transport2 (orders)' : 'car_transport_quotes (quotes)' }}
+      </h2>
+      <button type="button" class="link-button" (click)="toggleOperations(source)">
+        {{ operationStates[source].visible ? 'Hide' : 'Show' }}
+      </button>
+    </header>
+
+    <ng-container *ngIf="operationStates[source].visible">
+      <div *ngIf="operationStates[source].error" class="alert alert-error">
+        {{ operationStates[source].error }}
+      </div>
+      <div *ngIf="operationStates[source].loading" class="loading">Loading...</div>
+
+      <div class="table-container" *ngIf="!operationStates[source].loading && operationStates[source].data.length">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Action</th>
+              <th>Entity</th>
+              <th>Entity ID</th>
+              <th>Actor</th>
+              <th>Details</th>
+              <th>IP</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of operationStates[source].data">
+              <td>{{ entry.op_time | date: 'short' }}</td>
+              <td>{{ entry.action }}</td>
+              <td>{{ entry.entity_type }}</td>
+              <td>{{ entry.entity_id }}</td>
+              <td>{{ entry.actor_name || entry.actor_user_id || '-' }}</td>
+              <td>{{ entry.details || '-' }}</td>
+              <td>{{ entry.client_ip || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!operationStates[source].loading && !operationStates[source].data.length" class="empty">
+        No operation logs found for this database.
+      </div>
+
+      <div class="pagination" *ngIf="operationStates[source].total > operationStates[source].pageSize">
+        <button type="button" [disabled]="operationStates[source].page === 1" (click)="changePage(source, -1)">
+          Previous
+        </button>
+        <span>
+          Page {{ operationStates[source].page }} of {{ getPageCount(operationStates[source]) }}
+        </span>
+        <button
+          type="button"
+          [disabled]="operationStates[source].page >= getPageCount(operationStates[source])"
+          (click)="changePage(source, 1)"
+        >
+          Next
+        </button>
+      </div>
+    </ng-container>
+  </section>
+
+  <section class="card">
+    <header class="card-header">
+      <h2>Audit Logs — car_transport_audit</h2>
+      <button type="button" class="link-button" (click)="toggleAudit()">
+        {{ auditState.visible ? 'Hide' : 'Show' }}
+      </button>
+    </header>
+
+    <ng-container *ngIf="auditState.visible">
+      <div *ngIf="auditState.error" class="alert alert-error">{{ auditState.error }}</div>
+      <div *ngIf="auditState.loading" class="loading">Loading...</div>
+
+      <div class="table-container" *ngIf="!auditState.loading && auditState.data.length">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Event</th>
+              <th>CRUD</th>
+              <th>Actor</th>
+              <th>Target</th>
+              <th>Description</th>
+              <th>Success</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of auditState.data">
+              <td>{{ entry.occurred_at | date: 'short' }}</td>
+              <td>{{ entry.event_type }}</td>
+              <td>{{ entry.crud_operation || '-' }}</td>
+              <td>{{ entry.actor_user_id }}</td>
+              <td>{{ entry.target_user_id ?? '-' }}</td>
+              <td>{{ entry.action_description || '-' }}</td>
+              <td>{{ entry.login_success === null ? '-' : (entry.login_success ? 'Yes' : 'No') }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!auditState.loading && !auditState.data.length" class="empty">No audit logs found.</div>
+
+      <div class="pagination" *ngIf="auditState.total > auditState.pageSize">
+        <button type="button" [disabled]="auditState.page === 1" (click)="changeAuditPage(-1)">Previous</button>
+        <span>Page {{ auditState.page }} of {{ getPageCount(auditState) }}</span>
+        <button
+          type="button"
+          [disabled]="auditState.page >= getPageCount(auditState)"
+          (click)="changeAuditPage(1)"
+        >
+          Next
+        </button>
+      </div>
+    </ng-container>
+  </section>
+</div>
