@@ -40,7 +40,7 @@
 // //   if (!validGroup(user_group)) {
 // //     return res
 // //       .status(400)
-// //       .json({ ok: false, error: "user_group must be 'superadmin', 'admin' or 'staff'" });
+// //       .json({ ok: false, error: "user_group must be one of 'superadmin', 'admin', 'staff', or 'deleted employees'" });
 // //   }
 
 // //   if (!validStatus(status)) {
@@ -222,7 +222,7 @@
 // //   if (!validGroup(user_group)) {
 // //     return res
 // //       .status(400)
-// //       .json({ ok: false, error: "user_group must be 'superadmin', 'admin' or 'staff'" });
+// //       .json({ ok: false, error: "user_group must be one of 'superadmin', 'admin', 'staff', or 'deleted employees'" });
 // //   }
 
 // //   if (!validStatus(status)) {
@@ -470,7 +470,7 @@
 //   if (!validGroup(user_group)) {
 //     return res
 //       .status(400)
-//       .json({ ok: false, error: "user_group must be 'superadmin', 'admin' or 'staff'" });
+//       .json({ ok: false, error: "user_group must be one of 'superadmin', 'admin', 'staff', or 'deleted employees'" });
 //   }
 
 //   if (!validStatus(status)) {
@@ -699,7 +699,7 @@
 //   if (!validGroup(user_group)) {
 //     return res
 //       .status(400)
-//       .json({ ok: false, error: "user_group must be 'superadmin', 'admin' or 'staff'" });
+//       .json({ ok: false, error: "user_group must be one of 'superadmin', 'admin', 'staff', or 'deleted employees'" });
 //   }
 
 //   if (!validStatus(status)) {
@@ -939,8 +939,17 @@ const de = (...args) => DEBUG_AUTH && console.error(...args);
 
 // ====== 小工具：校驗/正規化/差異摘要 ======
 // 新增 former employees v2.1.1 在v2.1.0之後增加
+const GROUP_DELETED = "deleted employees";
+const LEGACY_GROUP_DELETED = "former employees";
+const ALL_GROUPS = ["superadmin", "admin", "staff", GROUP_DELETED, LEGACY_GROUP_DELETED];
+function normalizeGroup(group) {
+  return group === LEGACY_GROUP_DELETED ? GROUP_DELETED : group;
+}
+function isDeletedGroup(group) {
+  return normalizeGroup(group) === GROUP_DELETED;
+}
 function validGroup(group) {
-  return ["superadmin", "admin", "staff", "former employees"].includes(group);
+  return ALL_GROUPS.includes(group);
 }
 function validStatus(status) {
   return ["active", "inactive"].includes(status);
@@ -1001,7 +1010,15 @@ async function createUser(req, res) {
   if (!validGroup(user_group)) {
     return res
       .status(400)
-      .json({ ok: false, error: "user_group must be 'superadmin', 'admin' or 'staff'" });
+      .json({ ok: false, error: "user_group must be one of 'superadmin', 'admin', 'staff', or 'deleted employees'" });
+  }
+
+  const normalizedGroup = normalizeGroup(user_group);
+  if (!['admin', 'staff'].includes(normalizedGroup)) {
+    return res.status(400).json({
+      ok: false,
+      error: "new staff must use user_group 'admin' or 'staff'",
+    });
   }
 
   if (!validStatus(status)) {
@@ -1019,7 +1036,7 @@ async function createUser(req, res) {
     try {
       const [result] = await conn.query(
         "INSERT INTO users (user_name, user_password, user_group, real_name, email, status, office_location) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [user_name, hash, user_group, normalizedRealName, email, status, normalizedOffice]
+        [user_name, hash, normalizedGroup, normalizedRealName, email, status, normalizedOffice]
       );
 
       // 審計：建立帳號（摘要）
@@ -1166,6 +1183,7 @@ async function login(req, res) {
         return res.status(401).json({ ok: false, error: "invalid credentials" });
       }
 
+      user.user_group = normalizeGroup(user.user_group);
       const token = signToken({
         uid: user.user_id,
         role: user.user_group,
@@ -1223,8 +1241,9 @@ async function updateUser(req, res) {
   if (!validGroup(user_group)) {
     return res
       .status(400)
-      .json({ ok: false, error: "user_group must be 'superadmin', 'admin' or 'staff'" });
+      .json({ ok: false, error: "user_group must be one of 'superadmin', 'admin', 'staff', or 'deleted employees'" });
   }
+  const normalizedGroup = normalizeGroup(user_group);
   if (!validStatus(status)) {
     return res
       .status(400)
@@ -1251,7 +1270,7 @@ async function updateUser(req, res) {
         "UPDATE users SET user_name=?, user_group=?, real_name=?, email=?, status=?, office_location=? WHERE user_id=?",
         [
           user_name,
-          user_group,
+          normalizedGroup,
           normalizedRealName,
           email,
           status,
@@ -1267,7 +1286,7 @@ async function updateUser(req, res) {
       // 3) 建立「新值」物件，與舊值比對，輸出差異摘要
       const after = {
         user_name,
-        user_group,
+        user_group: normalizedGroup,
         real_name: normalizedRealName,
         email,
         status,
@@ -1414,10 +1433,10 @@ async function resetPassword(req, res) {
 
 // === NEW === 將某用戶標記為「former employees」v2.1.1 添加于 v2.1.0之後
 /**
- * PUT /api/users/:id/mark-former
- * ——— 會寫入「變更前 -> 變更後」摘要到 audit_log.action_description
+ * PUT /api/users/:id/mark-deleted
+ * Soft-delete: move the user into the deleted bucket and deactivate the account.
  */
-async function markFormer(req, res) {
+async function markDeleted(req, res) {
   const userId = Number(req.params.id);
   if (!userId) {
     return res.status(400).json({ ok: false, error: "userId required" });
@@ -1426,7 +1445,6 @@ async function markFormer(req, res) {
   try {
     const conn = await getPool("orders").getConnection();
     try {
-      // 1) 先查當前資料
       const [[before]] = await conn.query(
         "SELECT user_id, user_name, user_group FROM users WHERE user_id=?",
         [userId]
@@ -1435,30 +1453,26 @@ async function markFormer(req, res) {
         return res.status(404).json({ ok: false, error: "user not found" });
       }
 
-      // 如果已經是 former employees，直接返回 OK
-      if (before.user_group === "former employees") {
-        return res.json({ ok: true, affectedRows: 0, message: "already former employees" });
+      if (isDeletedGroup(before.user_group)) {
+        return res.json({ ok: true, affectedRows: 0, message: "already deleted" });
       }
 
-      // 2) 更新 user_group
       const [result] = await conn.query(
-        "UPDATE users SET user_group=? WHERE user_id=?",
-        ["former employees", userId]
+        "UPDATE users SET user_group=?, status=? WHERE user_id=?",
+        [GROUP_DELETED, "inactive", userId]
       );
 
-      // 3) 審計 —— 不改原有刪除審計的任何代碼
       try {
-        const desc = `mark user ${before.user_name} (#${userId}) as 'former employees'`;
+        const desc = `mark user ${before.user_name} (#${userId}) as 'deleted employees'`;
         await logAccountAction({
           req,
-          actorUserId : Number(req?.jwt?.uid) || 0,   // 若有 JWT，記操作者
+          actorUserId : Number(req?.jwt?.uid) || 0,
           targetUserId: userId,
           crudOperation: "UPDATE",
           description : desc,
         });
       } catch (e) {
-        // 容錯：審計失敗不影響主流程
-        console.error("[audit] markFormer failed:", e?.message || e);
+        console.error("[audit] markDeleted failed:", e?.message || e);
       }
 
       res.json({ ok: true, affectedRows: result.affectedRows });
@@ -1469,8 +1483,6 @@ async function markFormer(req, res) {
     res.status(500).json({ ok: false, error: err.message });
   }
 }
-
-
 /**
  * GET /api/users
  */
@@ -1481,7 +1493,11 @@ async function listUsers(req, res) {
       const [rows] = await conn.query(
         "SELECT user_id, user_name, user_group, real_name, email, status, office_location FROM users ORDER BY user_id ASC"
       );
-      res.json({ ok: true, data: rows });
+      const normalized = rows.map((row) => ({
+        ...row,
+        user_group: normalizeGroup(row.user_group),
+      }));
+      res.json({ ok: true, data: normalized });
     } finally {
       conn.release();
     }
@@ -1511,7 +1527,9 @@ async function getUser(req, res) {
         return res.status(404).json({ ok: false, error: "user not found" });
       }
 
-      res.json({ ok: true, data: rows[0] });
+      const user = rows[0];
+      user.user_group = normalizeGroup(user.user_group);
+      res.json({ ok: true, data: user });
     } finally {
       conn.release();
     }
@@ -1529,5 +1547,5 @@ module.exports = {
   resetPassword,
   listUsers,
   getUser,
-  markFormer,  // v2.1.1 新增 增加于 v2.1.0之後
+  markDeleted,  // v2.1.1 新增 增加于 v2.1.0之後
 };

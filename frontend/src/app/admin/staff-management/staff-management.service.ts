@@ -6,13 +6,14 @@ import { map, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 //export type StaffRole = 'superadmin' | 'admin' | 'staff';
-export type StaffRole = 'superadmin' | 'admin' | 'staff' | 'former employees';  // v2.1.1
+export type StaffRole = 'superadmin' | 'admin' | 'staff' | 'deleted employees';  // v2.1.1
+export type ApiStaffRole = StaffRole | 'former employees';
 export type StaffStatus = 'active' | 'inactive';
 
 export interface StaffUser {
   user_id: number;
   user_name: string;
-  user_group: StaffRole;
+  user_group: ApiStaffRole;
   real_name: string | null;
   email: string;
   status: StaffStatus;
@@ -22,7 +23,7 @@ export interface StaffUser {
 export interface CreateStaffPayload {
   user_name: string;
   password: string;
-  user_group: StaffRole;
+  user_group: ApiStaffRole;
   email: string;
   real_name?: string | null;
   status?: StaffStatus;
@@ -31,7 +32,7 @@ export interface CreateStaffPayload {
 
 export interface UpdateStaffPayload {
   user_name: string;
-  user_group: StaffRole;
+  user_group: ApiStaffRole;
   email: string;
   real_name?: string | null;
   status: StaffStatus;
@@ -137,15 +138,16 @@ export class StaffManagementService {
   }
 
   /** 將用戶標記為 former employees */  // v2.1.1 新增 v2.1.0之後增加
-  markAsFormer(userId: number): Observable<void> {
+  markAsDeleted(userId: number): Observable<void> {
     return this.http
-      .put<ApiAffectResponse>(`${this.baseUrl}/${userId}/mark-former`, {})
+      .put<ApiAffectResponse>(`${this.baseUrl}/${userId}/mark-deleted`, {})
       .pipe(
         map((res: ApiAffectResponse) => {
           if (!res.ok) {
-            throw new Error(res.error ?? 'Failed to mark user as former employee.');
+            throw new Error(res.error ?? 'Failed to mark user as deleted.');
           }
         })
       );
   }
 }
+

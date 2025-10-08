@@ -121,7 +121,6 @@ export interface UpdateOrderPayload {
   order_status?: OrderStatus;
   note?: string | null;
   office_location?: string | null;
-  first_contact?: number | null;
   current_person?: number | null;
   previous_person?: number | null;
 }
@@ -161,7 +160,6 @@ export interface CreateOrderPayload {
   order_status?: OrderStatus;
   note?: string | null;
   office_location?: string | null;
-  first_contact?: number | null;
   current_person?: number | null;
   previous_person?: number | null;
   items: CreateOrderItemPayload[];
@@ -350,3 +348,4 @@ export class OrderManagementService {
       );
   }
 }
+
