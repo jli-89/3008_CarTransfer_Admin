@@ -1,4 +1,4 @@
-<div class="admin-dashboard-container">
+﻿<div class="admin-dashboard-container">
   <h1>Admin Dashboard</h1>
 
   <nav class="admin-nav">
@@ -7,16 +7,18 @@
     <a routerLink="/admin/quote-management" class="nav-link">Quote Management</a>
     <a routerLink="/admin/log-viewer" class="nav-link">Log Viewer</a>
     <a routerLink="/admin/staff-activity" class="nav-link">Staff Activity Log</a>
-    <a routerLink="/admin/timesheet-review" class="nav-link">Timesheet Review</a>
+    <!-- <a routerLink="/admin/timesheet-review" class="nav-link">Timesheet Review</a> -->
   </nav>
 
+  <!--
   <div class="summary-row">
     <div class="summary-card summary-enquiries">Total Enquiries: {{ enquiries.length }}</div>
-    <div class="summary-card summary-quotes">Total Quotes &amp; Bookings: {{ quotesBookings.length }}</div>
+    <div class="summary-card summary-quotes">Total Quotes & Bookings: {{ quotesBookings.length }}</div>
     <div class="summary-card summary-pending">Pending: {{ getPendingCount() }}</div>
     <div class="summary-card summary-staff">Active Staff: {{ activeStaff }}</div>
     <div class="summary-card summary-clients">Total Clients: {{ getTotalClients() }}</div>
   </div>
+  -->
 
   <div class="quick-link-grid">
     <div class="quick-card">
@@ -44,6 +46,7 @@
     </div>
   </div>
 
+  <!--
   <div class="search-container">
     <label class="sr-only" for="admin-search">Search</label>
     <select [(ngModel)]="selectedField" class="search-dropdown" name="searchField" aria-label="Filter field">
@@ -64,9 +67,11 @@
       class="search-bar"
     />
   </div>
+  -->
 
+  <!--
   <div class="table-section">
-    <h2>Quotes &amp; Bookings</h2>
+    <h2>Quotes & Bookings</h2>
     <div class="table-toolbar">
       <button (click)="exportToExcel('quote')">Export Excel</button>
       <button (click)="exportToCSV('quote')">Export CSV</button>
@@ -108,7 +113,9 @@
       </tbody>
     </table>
   </div>
+  -->
 
+  <!--
   <div class="table-section">
     <h2>Customer Enquiries</h2>
     <div class="table-toolbar">
@@ -141,7 +148,9 @@
       </tbody>
     </table>
   </div>
+  -->
 
+  <!--
   <div class="table-section">
     <h2>Recycle Bin (Auto-Delete after 30 Days)</h2>
     <table>
@@ -170,6 +179,7 @@
       </tbody>
     </table>
   </div>
+  -->
 </div>
 
 
