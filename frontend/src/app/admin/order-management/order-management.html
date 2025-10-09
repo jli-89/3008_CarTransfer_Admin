@@ -220,10 +220,10 @@
           <td>{{ order.price_total !== null ? (order.price_total | number:'1.2-2') : 'N/A' }}</td>
           <td>{{ order.created_at | date: 'medium' }}</td>
           <td class="actions-cell">
-            <button type="button" class="btn link" (click)="toggleOrderItems(order.order_id)">
+            <button type="button" class="btn" (click)="toggleOrderItems(order.order_id)">
               {{ isOrderExpanded(order.order_id) ? 'Hide items' : 'Show items' }}
             </button>
-            <button type="button" class="btn link" (click)="openOrderEdit(order)">Edit order</button>
+            <button type="button" class="btn" (click)="openOrderEdit(order)">Edit order</button>
           </td>
         </tr>
 
@@ -349,7 +349,7 @@
                     <td>{{ item.snap_vehicle_value !== null ? (item.snap_vehicle_value | number:'1.2-2') : 'N/A' }}</td>
                     <td>{{ item.transfer_note || 'N/A' }}</td>
                     <td class="actions-cell">
-                      <button type="button" class="btn link" (click)="openItemEdit(order, item)">Edit item</button>
+                      <button type="button" class="btn" (click)="openItemEdit(order, item)">Edit item</button>
                     </td>
                   </tr>
 
