@@ -630,8 +630,15 @@ async function getTransferStatusOptions(req, res) {
     }
   }
 }
+// 更新訂單欄位（只允許白名單欄位），比對前後差異→決定 action（ASSIGN / STATUS_CHANGE / UPDATE）
+//   →呼叫 logOperation。
+//   注意 note：只有當 payload 帶了新 note 且與舊值不同時，才會「覆寫」資料庫的 note；
+//     不會自動追加系統字串。
 
+
+//640 875
 async function updateOrder(req, res) {
+  
   const orderId = Number.parseInt(req.params.orderId, 10);
   if (!Number.isFinite(orderId) || orderId <= 0) {
     return res
@@ -640,6 +647,10 @@ async function updateOrder(req, res) {
   }
 
   const payload = normalizeOrderPayload(req.body || {});
+  // << ADD LOG: raw payload before normalization step below
+  console.log('[orders.updateOrder] payload (raw keys) =', Object.keys(req.body || {}));
+  console.log('[orders.updateOrder] payload.note (raw) =', req.body ? req.body.note : undefined);
+
   const allowedFields = [
     "customer_name",
     "customer_email",
@@ -676,6 +687,12 @@ async function updateOrder(req, res) {
 
     const before = rows[0];
     if (!before) {
+      // << ADD LOG: record BEFORE values and raw incoming payload.note
+      console.log('[orders.updateOrder] BEFORE.orderId =', orderId);
+      console.log('[orders.updateOrder] BEFORE.note =', before.note);
+      console.log('[orders.updateOrder] BEFORE.current_person =', before.current_person, 'previous_person =', before.previous_person);
+      console.log('[orders.updateOrder] payload.note(raw from req.body) =', req.body ? req.body.note : undefined);
+
       throw notFoundError("order not found");
     }
 
@@ -735,15 +752,41 @@ async function updateOrder(req, res) {
       }
     }
 
+    // if (Object.prototype.hasOwnProperty.call(payload, "note")) {
+    //   const value = normalizeNote(payload.note);
+    //   normalizedInputs.note = value;
+    //   if (!isSameValue(before.note, value)) {
+    //     updates.push("note=?");
+    //     params.push(value);
+    //     changes.note = { old: before.note, new: value };
+    //   }
+    // }
     if (Object.prototype.hasOwnProperty.call(payload, "note")) {
-      const value = normalizeNote(payload.note);
-      normalizedInputs.note = value;
-      if (!isSameValue(before.note, value)) {
-        updates.push("note=?");
-        params.push(value);
-        changes.note = { old: before.note, new: value };
-      }
-    }
+  // normalize incoming note and log each step to help debugging
+  const rawNote = payload.note;
+  console.log('[orders.updateOrder] NOTE BLOCK: raw payload.note =', rawNote);
+
+  const value = normalizeNote(payload.note);
+  normalizedInputs.note = value;
+  console.log('[orders.updateOrder] NOTE BLOCK: normalized note =', value);
+
+  // compare using isSameValue and log the comparison result
+  const same = isSameValue(before.note, value);
+  console.log('[orders.updateOrder] NOTE BLOCK: isSameValue(before.note, normalized) =>', same);
+  console.log('[orders.updateOrder] NOTE BLOCK: before.note (trimmed) =', (before.note||'').toString());
+  console.log('[orders.updateOrder] NOTE BLOCK: new value (as will be stored) =', value);
+
+  if (!same) {
+    console.log('[orders.updateOrder] NOTE BLOCK: pushing note update; updates length before =', updates.length);
+    updates.push("note=?");
+    params.push(value);
+    changes.note = { old: before.note, new: value };
+    console.log('[orders.updateOrder] NOTE BLOCK: pushed note; updates length now =', updates.length);
+  } else {
+    console.log('[orders.updateOrder] NOTE BLOCK: not pushing note update because values considered same');
+  }
+}
+
 
     if (Object.prototype.hasOwnProperty.call(payload, "office_location")) {
       const value = normalizeOptionalString(payload.office_location, 100);
@@ -787,11 +830,20 @@ async function updateOrder(req, res) {
       }
     }
 
+    // if (!updates.length) {
+    //   const itemsMap = await fetchOrderItemsMap(conn, [orderId]);
+    //   const responseOrder = formatOrder(before, itemsMap.get(orderId) || []);
+    //   return res.json({ ok: true, data: responseOrder, changes: 0 });
+    // }
     if (!updates.length) {
+      console.log('[orders.updateOrder] NO UPDATES -> early return; updates array empty, params =', params, 'changes =', changes);
       const itemsMap = await fetchOrderItemsMap(conn, [orderId]);
       const responseOrder = formatOrder(before, itemsMap.get(orderId) || []);
       return res.json({ ok: true, data: responseOrder, changes: 0 });
     }
+
+    console.log('[orders.updateOrder] ABOUT TO RUN UPDATE; updates =', updates);
+    console.log('[orders.updateOrder] ABOUT TO RUN UPDATE; params =', params, 'orderId=', orderId);
 
     await conn.query(
       `UPDATE orders SET ${updates.join(", ")} WHERE order_id=?`,
@@ -816,6 +868,9 @@ async function updateOrder(req, res) {
       [orderId]
     );
     const after = afterRows[0];
+    console.log('[orders.updateOrder] AFTER.note =', after ? after.note : undefined);
+    console.log('[orders.updateOrder] AFTER.current_person =', after ? after.current_person : undefined, 'previous_person =', after ? after.previous_person : undefined);
+
 
     const itemsMap = await fetchOrderItemsMap(conn, [orderId]);
     const formatted = formatOrder(after, itemsMap.get(orderId) || []);
@@ -867,7 +922,9 @@ async function updateOrder(req, res) {
     }
   }
 }
-
+//建立訂單 + 多個訂單項目（一個交易內完成），
+// 建立完成後呼叫 logOperation(action="CREATE") 寫入操作日誌。
+// 注意 note 欄位：僅把前端傳進來的 note 原樣寫入（可為空）。
 async function createOrder(req, res) {
   const body = req.body || {};
   const payload = normalizeOrderPayload(body);
@@ -1289,7 +1346,7 @@ async function applyItemMutation(req, { itemId, payload, allowedFields = null })
     }
   }
 }
-
+//更新單一訂單項；若狀態改變，會落表 transfer_status_history，並以 ITEM 寫操作日誌。
 async function updateItem(req, res) {
   const itemId = Number.parseInt(req.params.itemId, 10);
   try {
@@ -1311,6 +1368,7 @@ async function updateItem(req, res) {
 }
 
 // PUT /api/items/:itemId/transfer_status { transfer_status, note }
+//updateItem(req, res) / updateItemStatus(req, res)：更新單一訂單項；若狀態改變，會落表 transfer_status_history，並以 ITEM 寫操作日誌。
 async function updateItemStatus(req, res) {
   const itemId = Number.parseInt(req.params.itemId, 10);
   const payload = {

@@ -297,7 +297,7 @@ export class OrderManagementComponent implements OnInit {
     }
     this.newOrderItems.splice(index, 1);
   }
-
+  //創建新訂單體提交
   submitNewOrder(): void {
     this.newOrderError = null;
 
@@ -392,6 +392,10 @@ export class OrderManagementComponent implements OnInit {
     payload.current_person = currentPerson;
     payload.previous_person = previousPerson;
 
+    
+    // ✅ 放這裡：送出前看見完整 payload
+    console.log('[orders] create payload', payload);
+
     this.isCreatingOrder = true;
 
     this.orderService
@@ -399,6 +403,7 @@ export class OrderManagementComponent implements OnInit {
       .pipe(finalize(() => (this.isCreatingOrder = false)))
       .subscribe({
         next: () => {
+          console.log('[orders] create success'); // 可選
           this.cancelCreateOrder();
           this.loadOrders();
         },
@@ -440,7 +445,7 @@ export class OrderManagementComponent implements OnInit {
     const customerEmail = form.customer_email.trim();
     const customerPhone = form.customer_phone.trim();
     const status = form.order_status;
-
+//可能是導致我bug（不能成功save新的note）的原因
     if (!customerName || !customerEmail || !customerPhone || !status) {
       this.orderEditError = 'Name, email, phone, and status are required.';
       return;
@@ -455,9 +460,13 @@ export class OrderManagementComponent implements OnInit {
 
     const price = form.price_total.trim();
     payload.price_total = price ? price : null;
-
+//可能是導致我bug的原因
+    const newNote = form.note.trim();
     const note = form.note.trim();
-    payload.note = note ? note : null;
+    const oldNote = (order.note ?? '').trim();
+    if (newNote !== oldNote) {
+      payload.note = note ? note : null;
+    }
 
     const office = form.office_location.trim();
     payload.office_location = office ? office : null;
@@ -477,6 +486,9 @@ export class OrderManagementComponent implements OnInit {
     }
     payload.previous_person = previousPerson;
 
+    // ✅ 放這裡：送出前看見完整 payload
+    console.log('[orders] update payload', { orderId: order.order_id, payload });
+
     this.isSavingOrder = true;
     this.orderEditError = null;
 
@@ -485,6 +497,7 @@ export class OrderManagementComponent implements OnInit {
       .pipe(finalize(() => (this.isSavingOrder = false)))
       .subscribe({
         next: (updated) => {
+          console.log('[orders] update success', updated); // 可選
           this.orders = this.orders.map((existing) =>
             existing.order_id === updated.order_id ? updated : existing
           );
@@ -492,6 +505,7 @@ export class OrderManagementComponent implements OnInit {
           this.orderEditForm = null;
         },
         error: (error) => {
+          console.error('[orders] update error', error); // 可選
           this.orderEditError = this.toErrorMessage(error, 'Failed to update order.');
         }
       });
@@ -621,12 +635,12 @@ export class OrderManagementComponent implements OnInit {
   }
 
   private parseUserSelectionValue(value: string): number | null | undefined {
-    if (!value) {
-      return null;
+    if (!value) {   
+      return null;      // 空字串 → null（允許「未指派」）
     }
     const parsed = Number(value);
     if (!Number.isInteger(parsed) || parsed <= 0) {
-      return undefined;
+      return undefined;   // 真不合法才擋
     }
     return parsed;
   }
