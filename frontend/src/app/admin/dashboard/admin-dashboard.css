@@ -185,3 +185,13 @@ button:hover {
   background: #dce8ff;
 }
 
+.user-banner {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #0b6efd;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin: 10px 0 16px;
+  font-size: 14px;
+  color: #333;
+}

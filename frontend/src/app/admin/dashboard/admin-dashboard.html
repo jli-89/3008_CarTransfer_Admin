@@ -1,5 +1,17 @@
 ﻿<div class="admin-dashboard-container">
   <h1>Admin Dashboard</h1>
+  
+
+  <div class="user-banner" *ngIf="currentUserName || currentUserId !== null">
+    <span>Logged in as: 
+      <strong>{{ currentUserName || ('User #' + currentUserId) }}</strong>
+      <ng-container *ngIf="currentUserName && currentUserId !== null">
+        (ID: {{ currentUserId }})
+      </ng-container>
+    </span>
+  </div>
+
+
 
   <nav class="admin-nav">
     <a routerLink="/admin/staff-management" class="nav-link">Staff Management</a>
