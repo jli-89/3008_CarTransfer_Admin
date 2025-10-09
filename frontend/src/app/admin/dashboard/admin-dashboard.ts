@@ -7,6 +7,8 @@ import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { AuthService } from '../../auth/auth.service';
+import { Router } from '@angular/router';
+
 
 
 @Component({
@@ -28,7 +30,12 @@ export class AdminDashboardComponent implements OnInit {
   recycleBin: any[] = [];
   activeStaff: number = 0;
 
-   constructor(private auth: AuthService) {}
+  constructor(private auth: AuthService, private router: Router) {}
+  // 新增：登出動作
+  logout() {
+    this.auth.logout();                   // 清掉 token / user
+    this.router.navigate(['/login']);     // 導回登入頁
+  }
 
   ngOnInit() {
     this.loadData();

@@ -1,14 +1,21 @@
 ﻿<div class="admin-dashboard-container">
   <h1>Admin Dashboard</h1>
   
-
+  <!-- 顯示現在登錄的是哪個用戶 -->
   <div class="user-banner" *ngIf="currentUserName || currentUserId !== null">
+    
     <span>Logged in as: 
       <strong>{{ currentUserName || ('User #' + currentUserId) }}</strong>
       <ng-container *ngIf="currentUserName && currentUserId !== null">
         (ID: {{ currentUserId }})
       </ng-container>
     </span>
+  </div>
+
+    <!-- 新增：右上工具列 退出登錄按鈕 louout button -->
+  <div class="admin-toolbar" style="display:flex; justify-content:flex-end; gap:12px; margin:8px 0 12px;">
+    <!-- <button class="btn" routerLink="/admin/staff-management">Go to Staff</button> -->
+    <button class="btn primary" (click)="logout()">account logout</button>
   </div>
 
 
