@@ -566,11 +566,99 @@ submitNewOrder(): void {
     // 產生 'YYYY-MM-DD HH:mm:ss'（本地時間）
     return `${d.getFullYear()}-${this.pad2(d.getMonth() + 1)}-${this.pad2(d.getDate())} ${this.pad2(d.getHours())}:${this.pad2(d.getMinutes())}:${this.pad2(d.getSeconds())}`;
   }
-
+// 把 userLabel 與純文字組成一行 entry
   private makeNoteAppendEntry(userLabel: string, text: string): string {
     const ts = this.formatLocalTimestamp(new Date());
     // e.g. [2025-10-10 14:32:05] Alice Lee: added text
     return `[${ts}] ${userLabel}: ${text}`;
+  }
+
+  // 取得目前使用者 label（你已經用 currentUserDisplay/currentUserId）
+  private getActorLabel(): string {
+    if (this.currentUserDisplay && this.currentUserId !== null) return `${this.currentUserDisplay}`;
+    if (this.currentUserDisplay) return this.currentUserDisplay;
+    if (this.currentUserId !== null) return `User #${this.currentUserId}`;
+    return 'Unknown';
+  }
+
+    // 比較 order 舊值 (OrderRecord) 與 UI form (OrderEditForm) → 回傳陣列 of change strings
+  private buildOrderDiffs(oldOrder: OrderRecord, form: OrderEditForm): string[] {
+    const diffs: string[] = [];
+
+    // 字串比較：name / email / phone
+    if ((form.customer_name || '').trim() !== (oldOrder.customer_name || '').trim()) {
+      diffs.push(`Customer name: "${oldOrder.customer_name || ''}" → "${form.customer_name.trim()}"`);
+    }
+    if ((form.customer_email || '').trim() !== (oldOrder.customer_email || '').trim()) {
+      diffs.push(`Customer email: "${oldOrder.customer_email || ''}" → "${form.customer_email.trim()}"`);
+    }
+    if ((form.customer_phone || '').trim() !== (oldOrder.customer_phone || '').trim()) {
+      diffs.push(`Customer phone: "${oldOrder.customer_phone || ''}" → "${form.customer_phone.trim()}"`);
+    }
+
+    // price_total (使用 toDecimalString 比較)
+    const newPrice = form.price_total.trim();
+    const oldPrice = this.toDecimalString(oldOrder.price_total);
+    if (newPrice !== oldPrice) {
+      diffs.push(`Price: "${oldPrice || '0.00'}" → "${newPrice || '0.00'}"`);
+    }
+
+    // order_status
+    if ((form.order_status || '') !== (oldOrder.order_status || '')) {
+      diffs.push(`Status: "${oldOrder.order_status || ''}" → "${form.order_status || ''}"`);
+    }
+
+    // office location
+    if ((form.office_location || '').trim() !== (oldOrder.office_location || '').trim()) {
+      diffs.push(`Office location: "${oldOrder.office_location || ''}" → "${form.office_location.trim()}"`);
+    }
+
+    // handlers (current / previous) — compare numeric IDs and show labels
+    const oldCurrent = oldOrder.current_person ?? null;
+    const newCurrent = form.current_person ? Number(form.current_person) : null;
+    if (String(oldCurrent) !== String(newCurrent)) {
+      diffs.push(`Current handler: "${this.getUserLabelById(oldCurrent)}" → "${this.getUserLabelById(newCurrent)}"`);
+    }
+
+    const oldPrev = oldOrder.previous_person ?? null;
+    const newPrev = form.previous_person ? Number(form.previous_person) : null;
+    if (String(oldPrev) !== String(newPrev)) {
+      diffs.push(`Previous handler: "${this.getUserLabelById(oldPrev)}" → "${this.getUserLabelById(newPrev)}"`);
+    }
+
+    // 你可以在這裡加入更多欄位比較，例如: public_order_code, customer_note (we don't allow editing), etc.
+
+    return diffs;
+  }
+
+  private getUserLabelById(id: number | null | undefined): string {
+    if (id === null || id === undefined || id === 0) return 'Unassigned';
+
+    // staffOptions 裡面可能的欄位名稱不一定相同（OrderUserOption），
+    // 我們用寬鬆的檢查來找到最合適的顯示名稱。
+    const found = this.staffOptions.find(s => {
+      // common id fields: user_id, id
+      const sid = (s as any).user_id ?? (s as any).id;
+      return (sid !== undefined && Number(sid) === Number(id));
+    });
+
+    if (!found) {
+      // fallback label
+      return `User #${id}`;
+    }
+
+    // 試著找一個能顯示的名字，順序由最友善到最原始
+    const f = found as any;
+    return (
+      f.display_name ||
+      f.real_name ||
+      f.full_name ||
+      f.user_name ||
+      f.name ||
+      f.email ||
+      // fallback to id fields if none of above
+      String(f.user_id ?? f.id ?? id)
+    );
   }
 
   cancelOrderEdit(): void {
@@ -677,7 +765,7 @@ saveOrderEdit(order: OrderRecord): void {
     this.orderEditError = 'Name, email, phone, and status are required.';
     return;
   }
-
+  // 建基本 payload
   const payload: UpdateOrderPayload = {
     customer_name: customerName,
     customer_email: customerEmail,
@@ -713,6 +801,22 @@ saveOrderEdit(order: OrderRecord): void {
   }
   payload.previous_person = previousPerson;
 
+    // ----- NEW: build diffs and append to note -----
+  const diffs = this.buildOrderDiffs(order, form);
+  const appendTextFromForm = (form.append_note || '').trim(); // if user also typed an append_message
+  if (diffs.length || appendTextFromForm) {
+    // 把自動產生的 diffs 與使用者輸入的 append_note 合併成一個描述
+    const combinedParts: string[] = [];
+    if (diffs.length) combinedParts.push(diffs.join('; '));
+    if (appendTextFromForm) combinedParts.push(appendTextFromForm);
+    const actor = this.getActorLabel();
+    const entry = this.makeNoteAppendEntry(actor, combinedParts.join(' ; '));
+
+    const existing = order.note || '';
+    payload.note = existing ? (existing + '\n' + entry) : entry;
+  }
+  // ----- END NEW -----
+
   console.log('[orders] update payload', { orderId: order.order_id, payload });
 
   this.isSavingOrder = true;
@@ -720,10 +824,11 @@ saveOrderEdit(order: OrderRecord): void {
     .pipe(finalize(() => (this.isSavingOrder = false)))
     .subscribe({
       next: (updated) => {
+        // 更新 local orders
         console.log('[orders] update success', updated);
-        if (this.orderEditForm) this.orderEditForm.append_note = '';
-        this.orders = this.orders.map((existing) => existing.order_id === updated.order_id ? updated : existing);
-        this.editingOrderId = null;
+        this.orders = this.orders.map((existing) =>
+          existing.order_id === updated.order_id ? updated : existing
+        );
         this.orderEditForm = null;
       },
       error: (error) => {
@@ -797,26 +902,99 @@ saveOrderEdit(order: OrderRecord): void {
     this.isSavingItem = true;
     this.itemEditError = null;
 
+    // 範例：在 saveItemEdit 成功後，前端把一條 entry append 到 order.note，然後呼叫 updateOrder
+    // this.orderService
+    //   .updateItem(item.item_id, payload)
+    //   .pipe(finalize(() => (this.isSavingItem = false)))
+    //   .subscribe({
+    //     next: (updatedItem) => {
+          
+    //     // 1) 更新 local orders view（你已有）
+    //     // 2) 產生一條 note entry
+    //       const actor = this.getActorLabel();
+    //       const entryText = `Updated item ${updatedItem.item_id} - status: ${updatedItem.transfer_status}`;
+    //       const entry = this.makeNoteAppendEntry(actor, entryText);
+         
+    //       // 3) 把 entry 串到該訂單的 existing note，然後呼叫 updateOrder
+    //       const orderId = updatedItem.order_id;
+    //       const order = this.orders.find(o => o.order_id === orderId);
+    //       const existingNote = order?.note || '';
+    //       const newNote = existingNote ? (existingNote + '\n' + entry) : entry;
+          
+    //       // 4) 呼叫 updateOrder（注意：若 server 允許直接覆寫 note）
+    //       const orderPayload: UpdateOrderPayload = { note: newNote };
+
+    //       this.orders = this.orders.map((existing) => {
+    //         if (existing.order_id !== updatedItem.order_id) {
+    //           return existing;
+    //         }
+    //         const updatedItems = existing.items.map((existingItem) =>
+    //           existingItem.item_id === updatedItem.item_id ? updatedItem : existingItem
+    //         );
+    //         return { ...existing, items: updatedItems };
+    //       });
+    //       this.cancelItemEdit();
+    //     },
+    //     error: (error) => {
+    //       this.itemEditError = this.toErrorMessage(error, 'Failed to update item.');
+    //     }
+    //   });
+
     this.orderService
-      .updateItem(item.item_id, payload)
-      .pipe(finalize(() => (this.isSavingItem = false)))
-      .subscribe({
-        next: (updatedItem) => {
-          this.orders = this.orders.map((existing) => {
-            if (existing.order_id !== updatedItem.order_id) {
-              return existing;
-            }
-            const updatedItems = existing.items.map((existingItem) =>
-              existingItem.item_id === updatedItem.item_id ? updatedItem : existingItem
-            );
-            return { ...existing, items: updatedItems };
-          });
-          this.cancelItemEdit();
-        },
-        error: (error) => {
-          this.itemEditError = this.toErrorMessage(error, 'Failed to update item.');
+  .updateItem(item.item_id, payload)
+  .pipe(finalize(() => (this.isSavingItem = false)))
+  .subscribe({
+    next: (updatedItem) => {
+      // 1) optimistic update local items (UI immediate feedback)
+      this.orders = this.orders.map((existing) => {
+        if (existing.order_id !== updatedItem.order_id) {
+          return existing;
         }
+        const updatedItems = existing.items.map((existingItem) =>
+          existingItem.item_id === updatedItem.item_id ? updatedItem : existingItem
+        );
+        return { ...existing, items: updatedItems };
       });
+
+      // 2) create a timestamped entry describing the change
+      const actor = this.getActorLabel(); // 需在 class 中有此 helper
+      const entryText = `Updated item ${updatedItem.item_id} - status: ${updatedItem.transfer_status}`;
+      const entry = this.makeNoteAppendEntry(actor, entryText);
+
+      // 3) build new note from current local order.note (best-effort)
+      const orderId = updatedItem.order_id;
+      const order = this.orders.find(o => o.order_id === orderId);
+      const existingNote = order?.note || '';
+      const newNote = existingNote ? (existingNote + '\n' + entry) : entry;
+
+      // 4) call updateOrder to persist appended note (server must accept note)
+      const orderPayload: UpdateOrderPayload = { note: newNote };
+
+      // Wait for updateOrder result before finalizing edit (so we can show errors)
+      this.orderService.updateOrder(orderId, orderPayload)
+        .pipe(finalize(() => {
+          // close item edit UI regardless; change this if you prefer different UX
+          this.cancelItemEdit();
+        }))
+        .subscribe({
+          next: (updatedOrder) => {
+            // replace local order with server-returned order (contains latest note)
+            this.orders = this.orders.map(o =>
+              o.order_id === updatedOrder.order_id ? updatedOrder : o
+            );
+          },
+          error: (err) => {
+            console.error('Failed to append note after item update', err);
+            this.itemEditError = this.toErrorMessage(err, 'Failed to append note to order.');
+            // local items remain updated (optimistic). If you want to rollback, implement extra logic.
+          }
+        });
+    },
+    error: (error) => {
+      this.itemEditError = this.toErrorMessage(error, 'Failed to update item.');
+    }
+  });
+
   }
 
   trackByOrderId(_: number, order: OrderRecord): number {
