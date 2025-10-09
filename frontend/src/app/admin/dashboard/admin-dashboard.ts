@@ -6,6 +6,10 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { AuthService } from '../../auth/auth.service';
+import { Router } from '@angular/router';
+
+
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -18,12 +22,20 @@ export class AdminDashboardComponent implements OnInit {
   searchTerm: string = '';
   selectedField: string = '';
 
+  currentUserName: string = '';
+  currentUserId: number | null = null;
+
   enquiries: any[] = [];
   quotesBookings: any[] = [];
   recycleBin: any[] = [];
   activeStaff: number = 0;
 
-  constructor() {}
+  constructor(private auth: AuthService, private router: Router) {}
+  // 新增：登出動作
+  logout() {
+    this.auth.logout();                   // 清掉 token / user
+    this.router.navigate(['/login']);     // 導回登入頁
+  }
 
   ngOnInit() {
     this.loadData();
@@ -31,6 +43,15 @@ export class AdminDashboardComponent implements OnInit {
 
     // Placeholder until backend is ready
     this.activeStaff = 5;
+    const authUser = this.auth.getUser<any>();
+    if (authUser) {
+            const maybeId = Number(authUser.user_id);
+      this.currentUserId = Number.isInteger(maybeId) && maybeId > 0 ? maybeId : null;
+      const real = typeof authUser.real_name === 'string' ? authUser.real_name.trim() : '';
+      const uname = typeof authUser.user_name === 'string' ? authUser.user_name.trim() : '';
+      this.currentUserName = real || uname;
+    }
+    
   }
 
   loadData() {
