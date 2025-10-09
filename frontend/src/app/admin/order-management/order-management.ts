@@ -394,7 +394,7 @@ export class OrderManagementComponent implements OnInit {
 
     
     // ✅ 放這裡：送出前看見完整 payload
-    console.log('[orders] create payload', payload);
+    console.log('[orders] create payload', payload);  //console.log
 
     this.isCreatingOrder = true;
 
@@ -403,7 +403,7 @@ export class OrderManagementComponent implements OnInit {
       .pipe(finalize(() => (this.isCreatingOrder = false)))
       .subscribe({
         next: () => {
-          console.log('[orders] create success'); // 可選
+          console.log('[orders] create success'); // 可選 console.log
           this.cancelCreateOrder();
           this.loadOrders();
         },
@@ -497,7 +497,7 @@ export class OrderManagementComponent implements OnInit {
       .pipe(finalize(() => (this.isSavingOrder = false)))
       .subscribe({
         next: (updated) => {
-          console.log('[orders] update success', updated); // 可選
+          console.log('[orders] update success', updated); // 可選  console.log
           this.orders = this.orders.map((existing) =>
             existing.order_id === updated.order_id ? updated : existing
           );
@@ -505,7 +505,7 @@ export class OrderManagementComponent implements OnInit {
           this.orderEditForm = null;
         },
         error: (error) => {
-          console.error('[orders] update error', error); // 可選
+          console.error('[orders] update error', error); // 可選  console.log
           this.orderEditError = this.toErrorMessage(error, 'Failed to update order.');
         }
       });
