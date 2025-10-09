@@ -36,6 +36,7 @@ interface OrderEditForm {
   price_total: string;
   order_status: OrderStatus | '';
   note: string;
+  append_note: string;      // <- 新增
   office_location: string;
   current_person: string;
   previous_person: string;
@@ -75,6 +76,7 @@ interface NewOrderForm {
   price_total: string;
   order_status: OrderStatus;
   note: string;
+  append_note: string;      // <- 新增
   office_location: string;
   current_person: string;
   previous_person: string;
@@ -298,120 +300,246 @@ export class OrderManagementComponent implements OnInit {
     this.newOrderItems.splice(index, 1);
   }
   //創建新訂單體提交
-  submitNewOrder(): void {
-    this.newOrderError = null;
+  // submitNewOrder(): void {
+  //   this.newOrderError = null;
 
-    const form = this.newOrderForm;
-    const customerName = form.customer_name.trim();
-    const customerEmail = form.customer_email.trim();
-    const customerPhone = form.customer_phone.trim();
+  //   const form = this.newOrderForm;
+  //   const customerName = form.customer_name.trim();
+  //   const customerEmail = form.customer_email.trim();
+  //   const customerPhone = form.customer_phone.trim();
 
-    if (!customerName || !customerEmail || !customerPhone) {
-      this.newOrderError = 'Name, email, and phone are required.';
-      return;
-    }
+  //   if (!customerName || !customerEmail || !customerPhone) {
+  //     this.newOrderError = 'Name, email, and phone are required.';
+  //     return;
+  //   }
 
-    if (!this.newOrderItems.length) {
-      this.newOrderError = 'Please add at least one item.';
-      return;
-    }
+  //   if (!this.newOrderItems.length) {
+  //     this.newOrderError = 'Please add at least one item.';
+  //     return;
+  //   }
 
-    const publicCode = form.public_order_code.trim();
-    const price = form.price_total.trim();
-    const note = form.note.trim();
-    const office = form.office_location.trim();
+  //   const publicCode = form.public_order_code.trim();
+  //   const price = form.price_total.trim();
+  //   const note = form.note.trim();
+  //   const office = form.office_location.trim();
 
-    if (this.currentUserId === null) {
-      this.newOrderError = 'Unable to determine the logged-in user for first contact.';
-      return;
-    }
+  //   if (this.currentUserId === null) {
+  //     this.newOrderError = 'Unable to determine the logged-in user for first contact.';
+  //     return;
+  //   }
 
-    const currentPerson = this.parseUserSelectionValue(form.current_person);
-    if (currentPerson === undefined) {
-      this.newOrderError = 'Current handler must be a valid user.';
-      return;
-    }
+  //   const currentPerson = this.parseUserSelectionValue(form.current_person);
+  //   if (currentPerson === undefined) {
+  //     this.newOrderError = 'Current handler must be a valid user.';
+  //     return;
+  //   }
 
-    const previousPerson = this.parseUserSelectionValue(form.previous_person);
-    if (previousPerson === undefined) {
-      this.newOrderError = 'Previous handler must be a valid user.';
-      return;
-    }
+  //   const previousPerson = this.parseUserSelectionValue(form.previous_person);
+  //   if (previousPerson === undefined) {
+  //     this.newOrderError = 'Previous handler must be a valid user.';
+  //     return;
+  //   }
 
-    const items: CreateOrderItemPayload[] = [];
-    for (let i = 0; i < this.newOrderItems.length; i += 1) {
-      const item = this.newOrderItems[i];
-      const plate = item.snap_plate_number.trim();
-      const vin = item.snap_vin.trim();
-      const maker = item.snap_maker.trim();
-      const model = item.snap_model.trim();
-      const colour = item.snap_colour.trim();
-      const pickup = item.pickup_location.trim();
-      const delivery = item.delivery_location.trim();
-      const status = item.transfer_status;
+  //   const items: CreateOrderItemPayload[] = [];
+  //   for (let i = 0; i < this.newOrderItems.length; i += 1) {
+  //     const item = this.newOrderItems[i];
+  //     const plate = item.snap_plate_number.trim();
+  //     const vin = item.snap_vin.trim();
+  //     const maker = item.snap_maker.trim();
+  //     const model = item.snap_model.trim();
+  //     const colour = item.snap_colour.trim();
+  //     const pickup = item.pickup_location.trim();
+  //     const delivery = item.delivery_location.trim();
+  //     const status = item.transfer_status;
 
-      if (!plate || !vin || !maker || !model || !colour || !pickup || !delivery || !status) {
-        this.newOrderError = `Item #${i + 1} is missing required fields.`;
-        return;
-      }
+  //     if (!plate || !vin || !maker || !model || !colour || !pickup || !delivery || !status) {
+  //       this.newOrderError = `Item #${i + 1} is missing required fields.`;
+  //       return;
+  //     }
 
-      const vehicleValue = item.snap_vehicle_value.trim();
-      if (vehicleValue && Number.isNaN(Number(vehicleValue))) {
-        this.newOrderError = `Vehicle value for item #${i + 1} must be numeric.`;
-        return;
-      }
+  //     const vehicleValue = item.snap_vehicle_value.trim();
+  //     if (vehicleValue && Number.isNaN(Number(vehicleValue))) {
+  //       this.newOrderError = `Vehicle value for item #${i + 1} must be numeric.`;
+  //       return;
+  //     }
 
-      items.push({
-        snap_plate_number: plate,
-        snap_vin: vin,
-        snap_maker: maker,
-        snap_model: model,
-        snap_colour: colour,
-        pickup_location: pickup,
-        delivery_location: delivery,
-        transfer_status: status as ItemStatus,
-        transfer_note: item.transfer_note.trim() ? item.transfer_note.trim() : undefined,
-        snap_vehicle_value: vehicleValue ? vehicleValue : undefined,
-      });
-    }
+  //     items.push({
+  //       snap_plate_number: plate,
+  //       snap_vin: vin,
+  //       snap_maker: maker,
+  //       snap_model: model,
+  //       snap_colour: colour,
+  //       pickup_location: pickup,
+  //       delivery_location: delivery,
+  //       transfer_status: status as ItemStatus,
+  //       transfer_note: item.transfer_note.trim() ? item.transfer_note.trim() : undefined,
+  //       snap_vehicle_value: vehicleValue ? vehicleValue : undefined,
+  //     });
+  //   }
 
-    const payload: CreateOrderPayload = {
-      customer_name: customerName,
-      customer_email: customerEmail,
-      customer_phone: customerPhone,
-      order_status: form.order_status,
-      items,
-    };
+  //   const payload: CreateOrderPayload = {
+  //     customer_name: customerName,
+  //     customer_email: customerEmail,
+  //     customer_phone: customerPhone,
+  //     order_status: form.order_status,
+  //     items,
+  //   };
 
-    if (publicCode) {
-      payload.public_order_code = publicCode;
-    }
-    payload.price_total = price ? price : undefined;
-    payload.note = note ? note : undefined;
-    payload.office_location = office ? office : undefined;
-    payload.current_person = currentPerson;
-    payload.previous_person = previousPerson;
+  //   if (publicCode) {
+  //     payload.public_order_code = publicCode;
+  //   }
+  //   payload.price_total = price ? price : undefined;
+  //   payload.note = note ? note : undefined;
+  //   payload.office_location = office ? office : undefined;
+  //   payload.current_person = currentPerson;
+  //   payload.previous_person = previousPerson;
 
     
-    // ✅ 放這裡：送出前看見完整 payload
-    console.log('[orders] create payload', payload);  //console.log
+  //   // ✅ 放這裡：送出前看見完整 payload
+  //   console.log('[orders] create payload', payload);  //console.log
 
-    this.isCreatingOrder = true;
+  //   this.isCreatingOrder = true;
 
-    this.orderService
-      .createOrder(payload)
-      .pipe(finalize(() => (this.isCreatingOrder = false)))
-      .subscribe({
-        next: () => {
-          console.log('[orders] create success'); // 可選 console.log
-          this.cancelCreateOrder();
-          this.loadOrders();
-        },
-        error: (error) => {
-          this.newOrderError = this.toErrorMessage(error, 'Failed to create order.');
-        }
-      });
+  //   this.orderService
+  //     .createOrder(payload)
+  //     .pipe(finalize(() => (this.isCreatingOrder = false)))
+  //     .subscribe({
+  //       next: () => {
+  //         console.log('[orders] create success'); // 可選 console.log
+  //         this.cancelCreateOrder();
+  //         this.loadOrders();
+  //       },
+  //       error: (error) => {
+  //         this.newOrderError = this.toErrorMessage(error, 'Failed to create order.');
+  //       }
+  //     });
+  // }
+
+
+  // ---------- 3) submitNewOrder() 修改 ----------
+submitNewOrder(): void {
+  this.newOrderError = null;
+
+  const form = this.newOrderForm;
+  const customerName = form.customer_name.trim();
+  const customerEmail = form.customer_email.trim();
+  const customerPhone = form.customer_phone.trim();
+
+  if (!customerName || !customerEmail || !customerPhone) {
+    this.newOrderError = 'Name, email, and phone are required.';
+    return;
   }
+
+  if (!this.newOrderItems.length) {
+    this.newOrderError = 'Please add at least one item.';
+    return;
+  }
+
+  const publicCode = form.public_order_code.trim();
+  const price = form.price_total.trim();
+  const office = form.office_location.trim();
+  const appendText = (form.append_note || '').trim();
+
+  if (this.currentUserId === null) {
+    this.newOrderError = 'Unable to determine the logged-in user for first contact.';
+    return;
+  }
+
+  const currentPerson = this.parseUserSelectionValue(form.current_person);
+  if (currentPerson === undefined) {
+    this.newOrderError = 'Current handler must be a valid user.';
+    return;
+  }
+
+  const previousPerson = this.parseUserSelectionValue(form.previous_person);
+  if (previousPerson === undefined) {
+    this.newOrderError = 'Previous handler must be a valid user.';
+    return;
+  }
+
+  const items: CreateOrderItemPayload[] = [];
+  for (let i = 0; i < this.newOrderItems.length; i += 1) {
+    const item = this.newOrderItems[i];
+    const plate = item.snap_plate_number.trim();
+    const vin = item.snap_vin.trim();
+    const maker = item.snap_maker.trim();
+    const model = item.snap_model.trim();
+    const colour = item.snap_colour.trim();
+    const pickup = item.pickup_location.trim();
+    const delivery = item.delivery_location.trim();
+    const status = item.transfer_status;
+
+    if (!plate || !vin || !maker || !model || !colour || !pickup || !delivery || !status) {
+      this.newOrderError = `Item #${i + 1} is missing required fields.`;
+      return;
+    }
+
+    const vehicleValue = item.snap_vehicle_value.trim();
+    if (vehicleValue && Number.isNaN(Number(vehicleValue))) {
+      this.newOrderError = `Vehicle value for item #${i + 1} must be numeric.`;
+      return;
+    }
+
+    items.push({
+      snap_plate_number: plate,
+      snap_vin: vin,
+      snap_maker: maker,
+      snap_model: model,
+      snap_colour: colour,
+      pickup_location: pickup,
+      delivery_location: delivery,
+      transfer_status: status as ItemStatus,
+      transfer_note: item.transfer_note.trim() ? item.transfer_note.trim() : undefined,
+      snap_vehicle_value: vehicleValue ? vehicleValue : undefined,
+    });
+  }
+
+  const payload: CreateOrderPayload = {
+    customer_name: customerName,
+    customer_email: customerEmail,
+    customer_phone: customerPhone,
+    order_status: form.order_status,
+    items,
+    // set the first_contact to current logged-in user as required
+    first_contact: this.currentUserId,
+  };
+
+  if (publicCode) payload.public_order_code = publicCode;
+  payload.price_total = price ? price : undefined;
+  payload.office_location = office ? office : undefined;
+  payload.current_person = currentPerson;
+  payload.previous_person = previousPerson;
+
+   // Only include note when user actually provided append text.
+  if (appendText) {
+    const actor = this.currentUserDisplay ? `${this.currentUserDisplay}` : (this.currentUserId ? `User #${this.currentUserId}` : 'Unknown');
+    payload.note = this.makeNoteAppendEntry(actor, appendText);
+  }
+
+  console.log('[orders] create payload', payload);
+
+  this.isCreatingOrder = true;
+  this.orderService.createOrder(payload)
+    .pipe(finalize(() => (this.isCreatingOrder = false)))
+    .subscribe({
+      next: () => {
+        console.log('[orders] create success');
+        // clear append field in form explicitly (in case cancelCreateOrder doesn't)
+      if (this.newOrderForm) this.newOrderForm.append_note = '';
+      this.loadOrders();
+      },
+      error: (error) => {
+        this.newOrderError = this.toErrorMessage(error, 'Failed to create order.');
+      },
+    });
+}
+
+
+
+
+
+
+
 
   openOrderEdit(order: OrderRecord): void {
     this.editingOrderId = order.order_id;
@@ -422,11 +550,27 @@ export class OrderManagementComponent implements OnInit {
       customer_phone: order.customer_phone || '',
       price_total: this.toDecimalString(order.price_total),
       order_status: order.order_status,
+      // keep existing note available for readonly display only
       note: order.note || '',
+      append_note: '',      // <- 新增 // user can add text here which will be appended (not overwrite)
       office_location: order.office_location || '',
       current_person: order.current_person ? String(order.current_person) : '',
       previous_person: order.previous_person ? String(order.previous_person) : '',
     };
+  }
+
+  // ---------- helper functions (加入到 class 中，如果已存在請合併) ----------
+  private pad2(n: number): string { return String(n).padStart(2, '0'); }
+
+  private formatLocalTimestamp(d: Date): string {
+    // 產生 'YYYY-MM-DD HH:mm:ss'（本地時間）
+    return `${d.getFullYear()}-${this.pad2(d.getMonth() + 1)}-${this.pad2(d.getDate())} ${this.pad2(d.getHours())}:${this.pad2(d.getMinutes())}:${this.pad2(d.getSeconds())}`;
+  }
+
+  private makeNoteAppendEntry(userLabel: string, text: string): string {
+    const ts = this.formatLocalTimestamp(new Date());
+    // e.g. [2025-10-10 14:32:05] Alice Lee: added text
+    return `[${ts}] ${userLabel}: ${text}`;
   }
 
   cancelOrderEdit(): void {
@@ -435,81 +579,160 @@ export class OrderManagementComponent implements OnInit {
     this.orderEditError = null;
   }
 
-  saveOrderEdit(order: OrderRecord): void {
-    if (!this.orderEditForm) {
-      return;
-    }
+//   saveOrderEdit(order: OrderRecord): void {
+//     if (!this.orderEditForm) {
+//       return;
+//     }
 
-    const form = this.orderEditForm;
-    const customerName = form.customer_name.trim();
-    const customerEmail = form.customer_email.trim();
-    const customerPhone = form.customer_phone.trim();
-    const status = form.order_status;
-//可能是導致我bug（不能成功save新的note）的原因
-    if (!customerName || !customerEmail || !customerPhone || !status) {
-      this.orderEditError = 'Name, email, phone, and status are required.';
-      return;
-    }
+//     const form = this.orderEditForm;
+//     const customerName = form.customer_name.trim();
+//     const customerEmail = form.customer_email.trim();
+//     const customerPhone = form.customer_phone.trim();
+//     const status = form.order_status;
+// //可能是導致我bug（不能成功save新的note）的原因
+//     if (!customerName || !customerEmail || !customerPhone || !status) {
+//       this.orderEditError = 'Name, email, phone, and status are required.';
+//       return;
+//     }
 
-    const payload: UpdateOrderPayload = {
-      customer_name: customerName,
-      customer_email: customerEmail,
-      customer_phone: customerPhone,
-      order_status: status,
-    };
+//     const payload: UpdateOrderPayload = {
+//       customer_name: customerName,
+//       customer_email: customerEmail,
+//       customer_phone: customerPhone,
+//       order_status: status,
+//     };
 
-    const price = form.price_total.trim();
-    payload.price_total = price ? price : null;
-//可能是導致我bug的原因
-    const newNote = form.note.trim();
-    const note = form.note.trim();
-    const oldNote = (order.note ?? '').trim();
-    if (newNote !== oldNote) {
-      payload.note = note ? note : null;
-    }
+//     const price = form.price_total.trim();
+//     payload.price_total = price ? price : null;
+// //可能是導致我bug的原因
+//     const newNote = form.note.trim();
+//     const note = form.note.trim();
+//     const oldNote = (order.note ?? '').trim();
+//     if (newNote !== oldNote) {
+//       payload.note = note ? note : null;
+//     }
 
-    const office = form.office_location.trim();
-    payload.office_location = office ? office : null;
+//     const office = form.office_location.trim();
+//     payload.office_location = office ? office : null;
 
 
-    const currentPerson = this.parseUserSelectionValue(form.current_person);
-    if (currentPerson === undefined) {
-      this.orderEditError = 'Current handler must be a valid user.';
-      return;
-    }
-    payload.current_person = currentPerson;
+//     const currentPerson = this.parseUserSelectionValue(form.current_person);
+//     if (currentPerson === undefined) {
+//       this.orderEditError = 'Current handler must be a valid user.';
+//       return;
+//     }
+//     payload.current_person = currentPerson;
 
-    const previousPerson = this.parseUserSelectionValue(form.previous_person);
-    if (previousPerson === undefined) {
-      this.orderEditError = 'Previous handler must be a valid user.';
-      return;
-    }
-    payload.previous_person = previousPerson;
+//     const previousPerson = this.parseUserSelectionValue(form.previous_person);
+//     if (previousPerson === undefined) {
+//       this.orderEditError = 'Previous handler must be a valid user.';
+//       return;
+//     }
+//     payload.previous_person = previousPerson;
 
-    // ✅ 放這裡：送出前看見完整 payload
-    console.log('[orders] update payload', { orderId: order.order_id, payload });
+//     // ✅ 放這裡：送出前看見完整 payload
+//     console.log('[orders] update payload', { orderId: order.order_id, payload });
 
-    this.isSavingOrder = true;
-    this.orderEditError = null;
+//     this.isSavingOrder = true;
+//     this.orderEditError = null;
 
-    this.orderService
-      .updateOrder(order.order_id, payload)
-      .pipe(finalize(() => (this.isSavingOrder = false)))
-      .subscribe({
-        next: (updated) => {
-          console.log('[orders] update success', updated); // 可選  console.log
-          this.orders = this.orders.map((existing) =>
-            existing.order_id === updated.order_id ? updated : existing
-          );
-          this.editingOrderId = null;
-          this.orderEditForm = null;
-        },
-        error: (error) => {
-          console.error('[orders] update error', error); // 可選  console.log
-          this.orderEditError = this.toErrorMessage(error, 'Failed to update order.');
-        }
-      });
+//     this.orderService
+//       .updateOrder(order.order_id, payload)
+//       .pipe(finalize(() => (this.isSavingOrder = false)))
+//       .subscribe({
+//         next: (updated) => {
+//           console.log('[orders] update success', updated); // 可選  console.log
+//           this.orders = this.orders.map((existing) =>
+//             existing.order_id === updated.order_id ? updated : existing
+//           );
+//           this.editingOrderId = null;
+//           this.orderEditForm = null;
+//         },
+//         error: (error) => {
+//           console.error('[orders] update error', error); // 可選  console.log
+//           this.orderEditError = this.toErrorMessage(error, 'Failed to update order.');
+//         }
+//       });
+//   }
+
+
+
+
+
+
+
+
+
+// ---------- 4) saveOrderEdit() 修改 ----------
+saveOrderEdit(order: OrderRecord): void {
+  if (!this.orderEditForm) return;
+
+  const form = this.orderEditForm;
+  const customerName = form.customer_name.trim();
+  const customerEmail = form.customer_email.trim();
+  const customerPhone = form.customer_phone.trim();
+  const status = form.order_status;
+
+  if (!customerName || !customerEmail || !customerPhone || !status) {
+    this.orderEditError = 'Name, email, phone, and status are required.';
+    return;
   }
+
+  const payload: UpdateOrderPayload = {
+    customer_name: customerName,
+    customer_email: customerEmail,
+    customer_phone: customerPhone,
+    order_status: status,
+  };
+
+  const price = form.price_total.trim();
+  payload.price_total = price ? price : null;
+
+  const appendText = (form.append_note || '').trim();
+  if (appendText) {
+    const actor = this.currentUserDisplay ? `${this.currentUserDisplay}` : (this.currentUserId ? `User #${this.currentUserId}` : 'Unknown');
+    const entry = this.makeNoteAppendEntry(actor, appendText);
+    const existing = order.note || '';
+    payload.note = existing ? (existing + '\n' + entry) : entry;
+  }
+
+  const office = form.office_location.trim();
+  payload.office_location = office ? office : null;
+
+  const currentPerson = this.parseUserSelectionValue(form.current_person);
+  if (currentPerson === undefined) {
+    this.orderEditError = 'Current handler must be a valid user.';
+    return;
+  }
+  payload.current_person = currentPerson;
+
+  const previousPerson = this.parseUserSelectionValue(form.previous_person);
+  if (previousPerson === undefined) {
+    this.orderEditError = 'Previous handler must be a valid user.';
+    return;
+  }
+  payload.previous_person = previousPerson;
+
+  console.log('[orders] update payload', { orderId: order.order_id, payload });
+
+  this.isSavingOrder = true;
+  this.orderService.updateOrder(order.order_id, payload)
+    .pipe(finalize(() => (this.isSavingOrder = false)))
+    .subscribe({
+      next: (updated) => {
+        console.log('[orders] update success', updated);
+        if (this.orderEditForm) this.orderEditForm.append_note = '';
+        this.orders = this.orders.map((existing) => existing.order_id === updated.order_id ? updated : existing);
+        this.editingOrderId = null;
+        this.orderEditForm = null;
+      },
+      error: (error) => {
+        console.error('[orders] update error', error);
+        this.orderEditError = this.toErrorMessage(error, 'Failed to update order.');
+      },
+    });
+}
+
 
   openItemEdit(order: OrderRecord, item: OrderItemRecord): void {
     this.editingItemId = item.item_id;
@@ -613,6 +836,7 @@ export class OrderManagementComponent implements OnInit {
       price_total: '',
       order_status: this.orderStatusOptions[0] ?? 'AwaitingManualQuote',
       note: '',
+      append_note: '',      // <- 新增
       office_location: '',
       current_person: '',
       previous_person: '',

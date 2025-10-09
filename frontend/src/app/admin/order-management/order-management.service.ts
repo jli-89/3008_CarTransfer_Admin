@@ -159,6 +159,8 @@ export interface CreateOrderPayload {
   price_total?: string | null;
   order_status?: OrderStatus;
   note?: string | null;
+    // 新增：
+  first_contact?: number | null;
   office_location?: string | null;
   current_person?: number | null;
   previous_person?: number | null;
