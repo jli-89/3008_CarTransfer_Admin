@@ -331,7 +331,7 @@
           </td>
         </tr>
 
-        <tr *ngIf="isOrderExpanded(order.order_id)" class="order-items-row">
+        <tr *ngIf="autoExpandAll || isOrderExpanded(order.order_id)" class="order-items-row">
           <td colspan="8">
             <div class="order-detail-summary">
               <div class="detail-item">

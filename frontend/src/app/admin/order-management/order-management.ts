@@ -90,6 +90,7 @@ interface NewOrderForm {
   styleUrls: ['./order-management.css']
 })
 export class OrderManagementComponent implements OnInit {
+  autoExpandAll: boolean = true; // 👉 true 就會自動展開所有 items
   orders: OrderRecord[] = [];
   meta: OrderListMeta | null = null;
 
