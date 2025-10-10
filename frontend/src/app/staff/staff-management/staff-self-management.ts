@@ -11,6 +11,9 @@ import {
   StaffUser
 } from './staff-management.service';
 
+import { DashboardService, CurrentUser } from '../../admin/dashboard/dashboard.service';
+
+
 interface StaffRow {
   id: number;
   name: string;
@@ -63,10 +66,99 @@ export class StaffSelfManagementComponent  implements OnInit {
   editingStaffId: number | null = null;
   editStaff: StaffEditFormState | null = null;
 
-  constructor(private staffService: StaffManagementService) {}
+  // ====== My Profile ======
+  currentUser: CurrentUser | null = null;
+  isEditingProfile = false;
+  isSavingProfile = false;
+  isLoadingProfile = false;
+  profileMessage: string | null = null;
+  editProfileForm = {
+    name: '',
+    email: '',
+    officeLocation: '',
+    password: ''
+  };
+
+  private loadCurrentUser(): void {
+  this.isLoadingProfile = true;
+  this.profileMessage = null;
+
+  this.dashboardService.getCurrentUser().subscribe({
+    next: (u) => {
+      this.isLoadingProfile = false;
+      this.currentUser = u;
+      this.editProfileForm = {
+        name: u.real_name || '',
+        email: u.email || '',
+        officeLocation: u.office_location || '',
+        password: ''
+      };
+    },
+    error: (err) => {
+      this.isLoadingProfile = false;
+      const msg =
+        err?.error?.error ||
+        err?.error?.message ||
+        err?.message ||
+        'Failed to load current user. (Check API/proxy)';
+      this.profileMessage = msg;
+    }
+  });
+}
+
+editMyProfile(): void {
+  this.isEditingProfile = true;
+  this.profileMessage = null;
+}
+
+cancelEditMyProfile(): void {
+  this.isEditingProfile = false;
+  this.profileMessage = null;
+}
+
+saveMyProfile(): void {
+  if (!this.currentUser) return;
+
+  const payload: any = {
+    real_name: this.editProfileForm.name.trim(),
+    email: this.editProfileForm.email.trim(),
+    office_location: this.editProfileForm.officeLocation.trim()
+  };
+  if (this.editProfileForm.password.trim()) {
+    payload.password = this.editProfileForm.password.trim();
+  }
+
+  this.isSavingProfile = true;
+  this.dashboardService.updateCurrentUser(this.currentUser.user_id, payload).subscribe({
+    next: (newUser) => {
+      this.isSavingProfile = false;
+      this.profileMessage = 'Profile updated successfully.';
+      this.isEditingProfile = false;
+      this.currentUser = newUser;
+      this.editProfileForm.password = '';
+    },
+    error: (err) => {
+      this.isSavingProfile = false;
+      const msg =
+        err?.error?.error ||
+        err?.error?.message ||
+        err?.message ||
+        'Failed to update profile.';
+      this.profileMessage = msg;
+    }
+  });
+}
+
+
+
+  constructor(
+    private staffService: StaffManagementService,
+    private dashboardService: DashboardService
+  ) {}
 
   ngOnInit(): void {
     this.fetchStaff();
+    this.loadCurrentUser();      // ✅ 新增
   }
 
   /** Filter list based on the deleted toggle */
