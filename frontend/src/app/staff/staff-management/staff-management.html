@@ -1,73 +1,68 @@
 <div class="staff-management-container">
   <h1>Staff Info</h1>
+
   <!-- ✅ My Profile -->
-<div class="my-profile-card">
-  <h2>My Profile</h2>
+  <div class="my-profile-card">
+    <h2>My Profile</h2>
 
-  <!-- Loading -->
-  <div *ngIf="isLoadingProfile" class="loading">Loading profile...</div>
+    <!-- Loading -->
+    <div *ngIf="isLoadingProfile" class="loading">Loading profile...</div>
 
-  <!-- Error / feedback -->
-  <div *ngIf="!isLoadingProfile && profileMessage" class="alert alert-error">
-    {{ profileMessage }}
-  </div>
+    <!-- Error / feedback -->
+    <div *ngIf="!isLoadingProfile && profileMessage" class="alert alert-error">
+      {{ profileMessage }}
+    </div>
 
-  <!-- Summary (loaded & not editing) -->
-  <div
-    class="profile-summary"
-    *ngIf="!isLoadingProfile && currentUser && !isEditingProfile"
-  >
-    <p><strong>Name:</strong> {{ currentUser.real_name || currentUser.user_name }}</p>
-    <p><strong>Email:</strong> {{ currentUser.email || 'N/A' }}</p>
-    <p><strong>Office:</strong> {{ currentUser.office_location || 'N/A' }}</p>
+    <!-- Summary (loaded & not editing) -->
+    <div
+      class="profile-summary"
+      *ngIf="!isLoadingProfile && currentUser && !isEditingProfile"
+    >
+      <p><strong>Name:</strong> {{ currentUser.real_name || currentUser.user_name }}</p>
+      <p><strong>Email:</strong> {{ currentUser.email || 'N/A' }}</p>
+      <p><strong>Office:</strong> {{ currentUser.office_location || 'N/A' }}</p>
 
-    <button type="button" class="btn primary" (click)="editMyProfile()">Edit My Info</button>
-  </div>
+      <button type="button" class="btn primary" (click)="editMyProfile()">Edit My Info</button>
+    </div>
 
-  <!-- Edit form (loaded & editing) -->
-  <div
-    class="profile-edit-form"
-    *ngIf="!isLoadingProfile && currentUser && isEditingProfile"
-  >
-    <label>Name:</label>
-    <input type="text" [(ngModel)]="editProfileForm.name" />
+    <!-- Edit form (loaded & editing) -->
+    <div
+      class="profile-edit-form"
+      *ngIf="!isLoadingProfile && currentUser && isEditingProfile"
+    >
+      <label>Name:</label>
+      <input type="text" [(ngModel)]="editProfileForm.name" />
 
-    <label>Email:</label>
-    <input type="email" [(ngModel)]="editProfileForm.email" />
+      <label>Email:</label>
+      <input type="email" [(ngModel)]="editProfileForm.email" />
 
-    <label>Office Location:</label>
-    <input type="text" [(ngModel)]="editProfileForm.officeLocation" />
+      <label>Office Location:</label>
+      <input type="text" [(ngModel)]="editProfileForm.officeLocation" />
 
-    <label>New Password:</label>
-    <input
-      type="password"
-      [(ngModel)]="editProfileForm.password"
-      placeholder="Leave blank to keep current password"
-    />
+      <label>New Password:</label>
+      <input
+        type="password"
+        [(ngModel)]="editProfileForm.password"
+        placeholder="Leave blank to keep current password"
+      />
 
-    <div class="form-actions">
-      <button
-        type="button"
-        class="btn primary"
-        (click)="saveMyProfile()"
-        [disabled]="isSavingProfile"
-      >
-        Save
-      </button>
-      <button type="button" class="btn" (click)="cancelEditMyProfile()">Cancel</button>
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn primary"
+          (click)="saveMyProfile()"
+          [disabled]="isSavingProfile"
+        >
+          Save
+        </button>
+        <button type="button" class="btn" (click)="cancelEditMyProfile()">Cancel</button>
+      </div>
     </div>
   </div>
-</div>
 
-<hr />
+  <hr />
 
-
-  <div *ngIf="errorMessage" class="staff-error">
-    {{ errorMessage }}
-  </div>
-
-  <!-- ✅ 去掉 Add Staff 和 Show Deleted Employees 按鈕 -->
-
+  <!-- ====== Staff list（已移除 Action 欄） ====== -->
   <div *ngIf="isLoading" class="loading">
     Loading staff...
   </div>
@@ -79,7 +74,6 @@
         <th>Name</th>
         <th>Email</th>
         <th>Office</th>
-        <th>Action</th>
       </tr>
     </thead>
     <tbody>
@@ -88,10 +82,6 @@
         <td>{{ staff.name }}</td>
         <td>{{ staff.email }}</td>
         <td>{{ staff.officeLocation || 'N/A' }}</td>
-        <td>
-          <button type="button" class="edit" (click)="openEditStaff(staff)">Edit</button>
-          <button type="button" class="reset" (click)="resetPassword(staff)">Reset Password</button>
-        </td>
       </tr>
     </tbody>
   </table>
