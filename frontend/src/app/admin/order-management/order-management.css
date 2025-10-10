@@ -269,3 +269,16 @@
   align-items: center;
   padding-top: 8px;
 }
+
+.status-tag[data-status="Completed"] {
+  background: #e6f7e6;
+  color: #228b22;
+}
+.status-tag[data-status="Incident"] {
+  background: #fff3cd;
+  color: #856404;
+}
+.status-tag[data-status="AwaitingManualQuote"] {
+  background: #e7f1ff;
+  color: #0056b3;
+}
