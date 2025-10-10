@@ -1,0 +1,53 @@
+<div class="staff-report-container">
+  <h1>Daily Staff Report</h1>
+
+  <form (submit)="submitReport(); $event.preventDefault()">
+    <div class="report-meta">
+      <label>Date: <input type="date" [(ngModel)]="date" name="date" required></label>
+      <label>Start Time: <input type="time" [(ngModel)]="start" name="start" required></label>
+      <label>End Time: <input type="time" [(ngModel)]="end" name="end" required></label>
+      <label>Staff Name: <input type="text" [(ngModel)]="staffName" name="staffName" required></label>
+    </div>
+
+    <h2>Clients</h2>
+    <div *ngFor="let client of clients; let i = index" class="client-card">
+      <h3>Client {{ i + 1 }}</h3>
+
+      <label>Client Name:</label>
+      <input [(ngModel)]="client.clientName" name="clientName{{i}}" type="text" required>
+
+      <label>Details:</label>
+      <textarea [(ngModel)]="client.details" name="clientDetails{{i}}"></textarea>
+
+      <label>Notes:</label>
+      <textarea [(ngModel)]="client.notes" name="clientNotes{{i}}"></textarea>
+
+      <label>Action Required:</label>
+      <textarea [(ngModel)]="client.actionRequired" name="clientAction{{i}}"></textarea>
+
+      <label>Status:</label>
+      <select [(ngModel)]="client.solved" name="clientSolved{{i}}">
+        <option value="">Select...</option>
+        <option value="Solved">Solved</option>
+        <option value="Not Solved">Not Solved</option>
+        <option value="Complete">Complete</option>
+      </select>
+
+      <!-- Attach Photo ????? (feature temporarily disabled) -->
+      <!--
+      <label>Attach Photo:</label>
+      <input type="file" (change)="onPhotoSelected($event, client)">
+      <div *ngIf="client.photo">
+        <img [src]="client.photo" alt="Client Photo" width="150">
+        <button type="button" (click)="removePhoto(client)">Remove Photo</button>
+      </div>
+      -->
+
+      <button type="button" class="remove-btn" *ngIf="clients.length > 1" (click)="removeClient(i)">Remove Client</button>
+    </div>
+
+    <button type="button" (click)="addClient()">+ Add Another Client</button>
+    <br><br>
+    <button type="submit" class="submit-btn">Submit Report</button>
+  </form>
+</div>

@@ -15,10 +15,10 @@ import { Router } from '@angular/router';
   selector: 'app-admin-dashboard',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
-  templateUrl: './admin-dashboard.html',
-  styleUrls: ['./admin-dashboard.css']
+  templateUrl: './staff-dashboard.html',
+  styleUrls: ['./staff-dashboard.css']
 })
-export class AdminDashboardComponent implements OnInit {
+export class StaffDashboardComponent implements OnInit {
   searchTerm: string = '';
   selectedField: string = '';
 

@@ -1,0 +1,56 @@
+﻿<div class="admin-dashboard-container">
+  <h1>Staff Dashboard</h1>
+  
+  <!-- 顯示現在登錄的是哪個用戶 -->
+  <div class="user-banner" *ngIf="currentUserName || currentUserId !== null">
+    
+    <span>Logged in as: 
+      <strong>{{ currentUserName || ('User #' + currentUserId) }}</strong>
+      <ng-container *ngIf="currentUserName && currentUserId !== null">
+        (ID: {{ currentUserId }})
+      </ng-container>
+    </span>
+  </div>
+
+    <!-- 新增：右上工具列 退出登錄按鈕 louout button -->
+  <div class="admin-toolbar" style="display:flex; justify-content:flex-end; gap:12px; margin:8px 0 12px;">
+
+    <button class="btn primary" (click)="logout()">Account logout</button>
+  </div>
+
+
+
+  <nav class="admin-nav">
+    <a routerLink="/staff/staff-management" class="nav-link">Staff Management</a>
+    <a routerLink="/staff/order-management" class="nav-link">Order Management</a>
+
+  </nav>
+
+
+
+  <div class="quick-link-grid">
+    <div class="quick-card">
+      <h3>Timesheet Entry</h3>
+      <p>Create or capture a new timesheet entry.</p>
+      <a class="quick-btn" routerLink="/staff/timesheets/new">New Timesheet</a>
+    </div>
+
+    <div class="quick-card">
+      <h3>My Timesheets</h3>
+      <p>See your previously submitted timesheets.</p>
+      <a class="quick-btn" routerLink="/staff/my-timesheets">View My History</a>
+    </div>
+    <div class="quick-card">
+      <h3>Daily Reports</h3>
+      <p>Compile or audit daily activity reports.</p>
+      <div class="quick-card-actions">
+        <a class="quick-btn" routerLink="/staff/daily-reports">All Reports</a>
+        <a class="quick-btn secondary" routerLink="/staff/my-daily-reports">My Reports</a>
+      </div>
+    </div>
+  </div>
+
+
+</div>
+
+

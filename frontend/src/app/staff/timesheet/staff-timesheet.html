@@ -1,0 +1,39 @@
+<div class="staff-timesheet-container">
+  <h1>🕒 My Timesheet</h1>
+
+  <form (submit)="submitTimesheet()">
+    <label>Staff Name:
+      <input type="text" [(ngModel)]="staffName" name="staffName" required>
+    </label>
+
+    <label>Start Date:
+      <input type="date" [(ngModel)]="startDate" name="startDate" required>
+    </label>
+
+    <label>Start Time:
+      <input type="time" [(ngModel)]="start" name="start" required>
+    </label>
+
+    <label>End Date:
+      <input type="date" [(ngModel)]="endDate" name="endDate" required>
+    </label>
+
+    <label>End Time:
+      <input type="time" [(ngModel)]="end" name="end" required>
+    </label>
+
+    <p>Total Hours:
+      <span [ngClass]="{'negative': calculateHours().includes('-')}">
+        {{ calculateHours() }}
+      </span>
+    </p>
+
+    <h3>Signature</h3>
+    <canvas #sigPad width="400" height="150"></canvas>
+    <br>
+    <button type="button" (click)="clearSignature()">Clear</button>
+
+    <br><br>
+    <button type="submit">Submit Timesheet</button>
+  </form>
+</div>
