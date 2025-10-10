@@ -1,0 +1,41 @@
+<div class="staff-management-container">
+  <h1>Staff Management</h1>
+
+  <div *ngIf="errorMessage" class="staff-error">
+    {{ errorMessage }}
+  </div>
+
+  <!-- ✅ 去掉 Add Staff 和 Show Deleted Employees 按鈕 -->
+
+  <div *ngIf="isLoading" class="loading">
+    Loading staff...
+  </div>
+
+  <table *ngIf="!isLoading && staffList.length">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Office</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let staff of staffList">
+        <td>{{ staff.id }}</td>
+        <td>{{ staff.name }}</td>
+        <td>{{ staff.email }}</td>
+        <td>{{ staff.officeLocation || 'N/A' }}</td>
+        <td>
+          <button type="button" class="edit" (click)="openEditStaff(staff)">Edit</button>
+          <button type="button" class="reset" (click)="resetPassword(staff)">Reset Password</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!isLoading && !staffList.length" class="empty-state">
+    No staff records found.
+  </div>
+</div>

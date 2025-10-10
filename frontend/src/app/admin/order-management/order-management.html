@@ -112,9 +112,22 @@
             </option>
           </select>
         </label>
-        <label class="note-field">
+
+        <!-- <label class="note-field">
           Note
           <textarea [(ngModel)]="newOrderForm.note" name="newOrderNote" rows="2"></textarea>
+        </label> -->
+
+        <!-- === Create 表單：替換原本 Note textarea === -->
+        <label class="note-field">
+          Append Note
+          <textarea
+            [(ngModel)]="newOrderForm.append_note"
+            name="newOrderAppend"
+            rows="2"
+            placeholder="Add a note — this will be appended with time & your name when creating the order."
+          ></textarea>
+          <small>Note: existing note doesn't apply for a new order — appended text becomes the initial note.</small>
         </label>
       </div>
 
@@ -284,10 +297,28 @@
                   </option>
                 </select>
               </label>
-              <label class="note-field">
+
+              <!-- <label class="note-field">
                 Note
                 <textarea [(ngModel)]="orderEditForm!.note" name="editOrderNote" rows="2"></textarea>
+              </label> -->
+
+              <!-- === Edit 表單：替換原本 Note textarea === -->
+              <label class="note-field">
+                Existing Note
+                <textarea [value]="order.note || ''" rows="2" disabled></textarea>
               </label>
+
+              <label class="note-field">
+                Append Note
+                <textarea
+                  [(ngModel)]="orderEditForm!.append_note"
+                  name="editOrderAppend"
+                  rows="2"
+                  placeholder="Add a note — it will be appended (timestamp & your name will be added automatically)."
+                ></textarea>
+              </label>
+
             </div>
 
               <div class="form-actions">

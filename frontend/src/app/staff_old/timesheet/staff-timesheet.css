@@ -1,0 +1,100 @@
+/* Container */
+.staff-timesheet-container {
+  width: 90%;
+  max-width: 800px;
+  margin: 40px auto;
+  background: #fff;
+  padding: 40px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+/* Heading */
+.staff-timesheet-container h1 {
+  text-align: center;
+  font-size: 48px;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+/* Labels & Inputs */
+.staff-timesheet-container label {
+  display: block;
+  font-size: 24px;      /* 🔹 Bigger label text */
+  margin-bottom: 20px;
+  font-weight: bold;
+  color: #444;
+}
+
+.staff-timesheet-container input[type="text"],
+.staff-timesheet-container input[type="date"],
+.staff-timesheet-container input[type="time"] {
+  width: 100%;
+  padding: 20px;        /* 🔹 Bigger padding inside box */
+  font-size: 22px;      /* 🔹 Larger input text */
+  margin-top: 8px;
+  border-radius: 10px;  /* 🔹 Slightly more rounded */
+  border: 2px solid #ccc;
+  outline: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.staff-timesheet-container input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 6px rgba(0,123,255,0.3);
+}
+
+/* Total Hours Display */
+.staff-timesheet-container p {
+  font-size: 24px;
+  margin: 25px 0;
+  font-weight: bold;
+  color: #222;
+}
+
+/* Signature */
+.staff-timesheet-container h3 {
+  font-size: 30px;
+  margin: 25px 0 15px;
+  color: #333;
+}
+
+canvas {
+  display: block;
+  background: #f9f9f9;
+  border: 2px dashed #aaa;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  cursor: crosshair;
+}
+
+/* Buttons */
+.staff-timesheet-container button {
+  padding: 16px 32px;
+  font-size: 22px;     /* 🔹 Larger button text */
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-right: 20px;
+  transition: all 0.2s ease;
+}
+
+.staff-timesheet-container button[type="button"] {
+  background: #dc3545;
+  color: white;
+}
+
+.staff-timesheet-container button[type="button"]:hover {
+  background: #b52a38;
+}
+
+.staff-timesheet-container button[type="submit"] {
+  background: #28a745;
+  color: white;
+  font-weight: bold;
+}
+
+.staff-timesheet-container button[type="submit"]:hover {
+  background: #1e7e34;
+}

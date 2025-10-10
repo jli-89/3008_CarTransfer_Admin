@@ -1,7 +1,9 @@
 {
   "/api": {
-    "target": "http://localhost:15597",
+    "target": "http://localhost:4010",
     "secure": false,
-    "changeOrigin": true
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": { "^/api": "/ljholding_backend_management/api" }
   }
 }

@@ -1,49 +1,164 @@
-import { Component } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { AuthService } from '../../auth/auth.service';
+import { Router } from '@angular/router';
+
+
 
 @Component({
-  selector: 'app-staff-dashboard',
+  selector: 'app-admin-dashboard',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './staff-dashboard.html',
   styleUrls: ['./staff-dashboard.css']
 })
-export class StaffDashboardComponent {
-  assignedInquiries = [
-    { id: 101, clientName: 'Alice Johnson', status: 'Not Started', submittedDate: '2025-09-12', itemCount: 2 },
-    { id: 102, clientName: 'Mark Smith', status: 'In Progress', submittedDate: '2025-09-10', itemCount: 1 }
-  ];
-
-  quotesBookings = [
-    { id: 201, clientName: 'Sarah Lee', email: 'sarah@example.com', itemCount: 3, submittedDate: '2025-09-11', status: 'Not Started', message: 'Need 3 cars for delivery' },
-    { id: 202, clientName: 'John Doe', email: 'john@example.com', itemCount: 1, submittedDate: '2025-09-12', status: 'In Progress', message: 'Pickup request for 1 car' }
-  ];
-
+export class StaffDashboardComponent implements OnInit {
   searchTerm: string = '';
+  selectedField: string = '';
 
-filterItems(items: any[]): any[] {
-  if (!this.searchTerm) return items;
+  currentUserName: string = '';
+  currentUserId: number | null = null;
 
-  return items.filter(i =>
-    Object.values(i).some(val => {
-      if (val === null || val === undefined) return false;
-      // Convert to string, and allow both case-sensitive and insensitive match
-      const strVal = val.toString();
-      return strVal.includes(this.searchTerm) || strVal.toLowerCase().includes(this.searchTerm.toLowerCase());
-    })
-  );
-}
+  enquiries: any[] = [];
+  quotesBookings: any[] = [];
+  recycleBin: any[] = [];
+  activeStaff: number = 0;
 
+  constructor(private auth: AuthService, private router: Router) {}
+  // 新增：登出動作
+  logout() {
+    this.auth.logout();                   // 清掉 token / user
+    this.router.navigate(['/login']);     // 導回登入頁
+  }
 
-  updateInquiryStatus(id: number, status: string, type: 'enquiry' | 'quote') {
-    if (type === 'enquiry') {
-      const inquiry = this.assignedInquiries.find(i => i.id === id);
-      if (inquiry) inquiry.status = status;
-    } else {
-      const quote = this.quotesBookings.find(q => q.id === id);
-      if (quote) quote.status = status;
+  ngOnInit() {
+    this.loadData();
+    this.cleanRecycleBin();
+
+    // Placeholder until backend is ready
+    this.activeStaff = 5;
+    const authUser = this.auth.getUser<any>();
+    if (authUser) {
+            const maybeId = Number(authUser.user_id);
+      this.currentUserId = Number.isInteger(maybeId) && maybeId > 0 ? maybeId : null;
+      const real = typeof authUser.real_name === 'string' ? authUser.real_name.trim() : '';
+      const uname = typeof authUser.user_name === 'string' ? authUser.user_name.trim() : '';
+      this.currentUserName = real || uname;
     }
+    
+  }
+
+  loadData() {
+    const savedEnquiries = localStorage.getItem('staffEnquiries');
+    this.enquiries = savedEnquiries ? JSON.parse(savedEnquiries) : [];
+
+    const savedQuotes = localStorage.getItem('customerEnquiries');
+    this.quotesBookings = savedQuotes ? JSON.parse(savedQuotes) : [];
+
+    const savedBin = localStorage.getItem('recycleBin');
+    this.recycleBin = savedBin ? JSON.parse(savedBin) : [];
+  }
+
+  saveData() {
+    localStorage.setItem('staffEnquiries', JSON.stringify(this.enquiries));
+    localStorage.setItem('customerEnquiries', JSON.stringify(this.quotesBookings));
+    localStorage.setItem('recycleBin', JSON.stringify(this.recycleBin));
+  }
+
+  filterItems(items: any[]) {
+    if (!this.searchTerm) return items;
+    const query = this.searchTerm.trim().toLowerCase();
+
+    if (this.selectedField) {
+      return items.filter(item =>
+        item[this.selectedField]?.toString().toLowerCase().includes(query)
+      );
+    }
+
+    return items.filter(item =>
+      Object.values(item).some(val =>
+        val ? val.toString().toLowerCase().includes(query) : false
+      )
+    );
+  }
+
+  updateStatus(item: any, status: string) {
+    item.status = status;
+    this.saveData();
+  }
+
+  getPendingCount(): number {
+    return this.quotesBookings.filter(q => q.status !== 'Resolved').length;
+  }
+
+  getTotalClients(): number {
+    const emails = this.quotesBookings.map(q => q.email).concat(this.enquiries.map(e => e.email));
+    const unique = new Set(emails.filter(e => e));
+    return unique.size;
+  }
+
+  deleteEntry(item: any, type: 'enquiry' | 'quote') {
+    this.recycleBin.push({ ...item, type, deletedAt: new Date().toISOString() });
+    if (type === 'enquiry') {
+      this.enquiries = this.enquiries.filter(e => e.id !== item.id);
+    } else {
+      this.quotesBookings = this.quotesBookings.filter(q => q.id !== item.id);
+    }
+    this.saveData();
+  }
+
+  restoreItem(item: any) {
+    if (item.type === 'enquiry') {
+      this.enquiries.push(item);
+    } else {
+      this.quotesBookings.push(item);
+    }
+    this.recycleBin = this.recycleBin.filter(i => i !== item);
+    this.saveData();
+  }
+
+  permanentDelete(item: any) {
+    this.recycleBin = this.recycleBin.filter(i => i !== item);
+    this.saveData();
+  }
+
+  cleanRecycleBin() {
+    const now = new Date();
+    this.recycleBin = this.recycleBin.filter(item => {
+      const deletedAt = new Date(item.deletedAt);
+      const diffDays = (now.getTime() - deletedAt.getTime()) / (1000 * 60 * 60 * 24);
+      return diffDays <= 30;
+    });
+    this.saveData();
+  }
+
+  exportToExcel(type: 'enquiry' | 'quote') {
+    const data = type === 'enquiry' ? this.enquiries : this.quotesBookings;
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, type === 'enquiry' ? 'Enquiries' : 'Quotes');
+    XLSX.writeFile(workbook, `${type}-export.xlsx`);
+  }
+
+  exportToCSV(type: 'enquiry' | 'quote') {
+    const data = type === 'enquiry' ? this.enquiries : this.quotesBookings;
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const csv = XLSX.utils.sheet_to_csv(worksheet);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, `${type}-export.csv`);
+  }
+
+  exportToPDF(type: 'enquiry' | 'quote') {
+    const data = type === 'enquiry' ? this.enquiries : this.quotesBookings;
+    const doc: any = new jsPDF();
+    const columns = Object.keys(data[0] || {}).map(key => ({ header: key, dataKey: key }));
+    doc.autoTable({ columns, body: data });
+    doc.save(`${type}-export.pdf`);
   }
 }
