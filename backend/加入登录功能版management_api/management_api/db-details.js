@@ -28,28 +28,22 @@
 //   dbQuotes: "car_transport_quote"
 // };
 
+// db-details.js
 require('dotenv').config();
 
-const mode = process.env.DB_MODE || "local";
+const mode = process.env.DB_MODE || 'local';
 
-let config;
+const mysqlHost = process.env.MYSQL_HOST || 'localhost';
+const mysqlPort = Number(process.env.MYSQL_PORT || 3306);
+const mysqlUser = process.env.MYSQL_USER || (mode === 'remote' ? 'jli89_cartransportadmin' : 'root');
+const mysqlPassword = process.env.MYSQL_PASSWORD || (mode === 'remote' ? 'As3webadmin' : '123456');
 
-if (mode === "remote") {
-  config = {
-    mysqlHost: "localhost",
-    mysqlPort: 3306,
-    mysqlUser: "jli89_cartransportadmin",
-    mysqlPassword: "As3webadmin",
-    dbAudit: "jli89_car_transport_audit"
-  };
-} else {
-  config = {
-    mysqlHost: "localhost",
-    mysqlPort: 3306,
-    mysqlUser: "root",
-    mysqlPassword: "123456",
-    dbAudit: "car_transport_audit"
-  };
-}
-
-module.exports = config;
+module.exports = {
+  mysqlHost,
+  mysqlPort,
+  mysqlUser,
+  mysqlPassword,
+  // 业务库：orders / quotes（database.js 会用到这两个字段建连接池）
+  dbOrders: process.env.DB_ORDERS || (mode === 'remote' ? 'jli89_car_transport2' : 'car_transport2'),
+  dbQuotes: process.env.DB_QUOTES || (mode === 'remote' ? 'jli89_car_transport_quotes' : 'car_transport_quote')
+};
