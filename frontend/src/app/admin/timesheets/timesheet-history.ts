@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import {
   TimesheetListMeta,
@@ -28,7 +29,10 @@ export class TimesheetHistoryComponent implements OnInit {
   isLoading = false;
   errorMessage: string | null = null;
 
-  constructor(private readonly timesheetService: TimesheetManagementService) {}
+  constructor(
+    private readonly timesheetService: TimesheetManagementService,
+    private readonly router: Router
+  ) {}
 
   ngOnInit(): void {
     this.loadTimesheets();
@@ -70,6 +74,11 @@ export class TimesheetHistoryComponent implements OnInit {
       this.currentPage -= 1;
       this.loadTimesheets();
     }
+  }
+
+  navigateToDashboard(): void {
+    const target = this.router.url.startsWith('/staff') ? '/staff/dashboard' : '/admin/dashboard';
+    this.router.navigate([target]);
   }
 
   private loadTimesheets(): void {
