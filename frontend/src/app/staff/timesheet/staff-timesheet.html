@@ -1,6 +1,7 @@
 <div class="staff-timesheet-container">
-  <h1>🕒 My Timesheet</h1>
 
+  <app-staff-header title="My Timesheet">
+  </app-staff-header>
   <form (submit)="submitTimesheet()">
     <label>Staff Name:
       <input type="text" [(ngModel)]="staffName" name="staffName" required>

@@ -10,6 +10,7 @@ import {
   LocationPayload,
   RoutePricePayload,
 } from './quote-management.service';
+import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
 
 interface RoutePriceFormState {
   pickup_id: number | null;
@@ -23,7 +24,7 @@ interface RoutePriceFormState {
 @Component({
   selector: 'app-quote-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule,AdminHeaderComponent],
   templateUrl: './quote-management.html',
   styleUrls: ['./quote-management.css'],
 })

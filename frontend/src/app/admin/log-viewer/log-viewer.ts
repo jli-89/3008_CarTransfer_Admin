@@ -8,6 +8,7 @@ import {
   AuditLogEntry,
   PaginatedResult,
 } from './log.service';
+import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
 
 type OperationSource = 'car_transport2' | 'car_transport_quotes';
 
@@ -33,7 +34,7 @@ interface FilterState {
 @Component({
   selector: 'app-log-viewer',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule,AdminHeaderComponent],
   templateUrl: './log-viewer.html',
   styleUrls: ['./log-viewer.css'],
 })

@@ -1,0 +1,35 @@
+<div class="login-container">
+  <h1>Staff Login</h1>
+
+  <form (submit)="login(); $event.preventDefault()">
+    <label for="username">Username:</label>
+    <input
+      id="username"
+      [(ngModel)]="username"
+      name="username"
+      type="text"
+      placeholder="Enter your username"
+      required
+    />
+
+    <label for="password">Password:</label>
+    <input
+      id="password"
+      [(ngModel)]="password"
+      name="password"
+      type="password"
+      placeholder="Enter your password"
+      required
+    />
+
+    <button type="submit">Login</button>
+
+    <!-- Error message -->
+    <p *ngIf="error" class="error">{{ error }}</p>
+
+    <!-- Forgot Password Link -->
+    <p class="forgot-password">
+      <a routerLink="/forgot-password">Forgot Password?</a>
+    </p>
+  </form>
+</div>

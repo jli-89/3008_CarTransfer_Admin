@@ -11,11 +11,12 @@ import {
   DailyReportSummary,
 } from './daily-report.service';
 import { TimesheetManagementService, StaffOption } from '../timesheets/timesheet-management.service';
+import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
 
 @Component({
   selector: 'app-daily-report-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, AdminHeaderComponent],
   templateUrl: './daily-report-list.html',
   styleUrls: ['./daily-report-list.css'],
 })

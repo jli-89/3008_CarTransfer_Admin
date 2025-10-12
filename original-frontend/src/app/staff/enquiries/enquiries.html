@@ -1,0 +1,28 @@
+<div class="enquiries-container">
+  <h1>Customer Enquiries</h1>
+
+  <!-- Search Bar -->
+  <input type="text" placeholder="Search by Name, Email, Date or Message..." [(ngModel)]="searchTerm" class="search-bar" />
+
+  <!-- Enquiries Table -->
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Client Name</th>
+        <th>Email</th>
+        <th>Submitted Date</th>
+        <th>Message</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let enquiry of filterEnquiries(enquiries)">
+        <td>{{ enquiry.id }}</td>
+        <td>{{ enquiry.clientName }}</td>
+        <td>{{ enquiry.email }}</td>
+        <td>{{ enquiry.submittedDate }}</td>
+        <td>{{ enquiry.message }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

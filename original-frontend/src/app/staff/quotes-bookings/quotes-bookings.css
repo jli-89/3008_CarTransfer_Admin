@@ -1,0 +1,100 @@
+body {
+  background: #f4f6f9;
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  font-size: 28px; /* 🔹 Large base font */
+  line-height: 1.6;
+}
+
+.quotes-bookings-container {
+  width: 95%;
+  margin: 40px auto;
+}
+
+/* Title */
+h1 {
+  text-align: center;
+  font-size: 60px; /* 🔹 Very large title */
+  margin-bottom: 40px;
+  color: #222;
+  font-weight: bold;
+}
+
+/* Search Bar */
+.search-bar {
+  width: 100%;
+  padding: 22px;
+  font-size: 28px; /* 🔹 Big text inside */
+  border-radius: 12px;
+  border: 2px solid #aaa;
+  margin-bottom: 30px;
+}
+
+/* Table */
+.quotes-bookings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 26px; /* 🔹 Large rows */
+  background: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.quotes-bookings-table th,
+.quotes-bookings-table td {
+  border: 1px solid #ccc;
+  padding: 22px; /* 🔹 Big padding */
+  text-align: left;
+}
+
+.quotes-bookings-table th {
+  background: #007bff;
+  color: white;
+  font-size: 30px; /* 🔹 Huge headers */
+  text-transform: uppercase;
+}
+
+.quotes-bookings-table tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+.quotes-bookings-table tr:hover {
+  background: #e9f5ff;
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 14px 24px;
+  border-radius: 14px;
+  font-weight: bold;
+  font-size: 24px; /* 🔹 Big font */
+  color: #fff;
+  display: inline-block;
+  min-width: 180px;
+  text-align: center;
+}
+
+.not-started { background-color: gray; }
+.in-progress { background-color: orange; }
+.resolved { background-color: green; }
+
+/* Action Buttons */
+.action-buttons button {
+  margin: 8px;
+  padding: 20px 28px; /* 🔹 Large padding */
+  font-size: 28px; /* 🔹 Big text */
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #fff;
+  transition: 0.3s;
+}
+
+.action-buttons button:hover {
+  transform: scale(1.05); /* subtle zoom */
+  opacity: 0.9;
+}
+
+.action-button.not-started { background-color: gray; }
+.action-button.in-progress { background-color: orange; }
+.action-button.resolved { background-color: green; }

@@ -1,0 +1,156 @@
+<div class="daily-report-list-container">
+  <!-- <app-staff-header title="My Daily Reports">
+    <a class="btn primary" routerLink="/staff/daily-reports/new">New Daily Report</a>
+  </app-staff-header> -->
+  <ng-container *ngIf="location.path().startsWith('/staff'); else adminHeader">
+    <app-staff-header title="My Daily Reports">
+      <a class="btn primary" routerLink="/staff/daily-reports/new">New Daily Report</a>
+    </app-staff-header>
+  </ng-container>
+
+  <ng-template #adminHeader>
+    <app-admin-header title="My Daily Reports">
+      <a class="btn primary" routerLink="/admin/daily-reports/new">New Daily Report</a>
+    </app-admin-header>
+  </ng-template>
+
+
+
+  <section class="filters-card">
+    <div class="filter-group">
+      <label>
+        From
+        <input type="date" [(ngModel)]="filters.date_from" name="filterFrom" />
+      </label>
+      <label>
+        To
+        <input type="date" [(ngModel)]="filters.date_to" name="filterTo" />
+      </label>
+      <label>
+        Status
+        <select [(ngModel)]="filters.status" name="filterStatus">
+          <option value="">Any client status</option>
+          <option value="Solved">Solved</option>
+          <option value="Not Solved">Not Solved</option>
+          <option value="Complete">Complete</option>
+        </select>
+      </label>
+    </div>
+    <div class="filter-actions">
+      <button type="button" class="btn primary" (click)="applyFilters()">Apply</button>
+      <button type="button" class="btn" (click)="clearFilters()">Reset</button>
+    </div>
+  </section>
+
+  <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
+
+  <div class="content">
+    <div class="list-panel">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>Clients</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let report of reports"
+            (click)="selectReport(report)"
+            [class.selected]="selectedReport?.report_id === report.report_id"
+          >
+            <td>{{ report.report_id }}</td>
+            <td>{{ report.report_date }}</td>
+            <td>{{ report.client_count }}</td>
+            <td>{{ report.created_at | date: 'medium' }}</td>
+          </tr>
+          <tr *ngIf="!reports.length && !isLoadingList">
+            <td colspan="4" class="muted">No reports found.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="isLoadingList" class="loading">Loading reports...</div>
+      <div *ngIf="meta" class="list-meta">
+        Total: {{ meta.total }} | Page {{ meta.page }} / {{ meta.totalPages }}
+      </div>
+      <div *ngIf="meta && meta.totalPages > 1" class="pagination">
+        <button type="button" class="btn" (click)="prevPage()" [disabled]="currentPage <= 1">
+          Previous
+        </button>
+        <span>Page {{ currentPage }} of {{ meta.totalPages }}</span>
+        <button
+          type="button"
+          class="btn"
+          (click)="nextPage()"
+          [disabled]="meta && currentPage >= meta.totalPages"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+
+    <div class="detail-panel" *ngIf="selectedReport">
+      <div class="detail-header">
+        <div>
+          <h2>Report #{{ selectedReport.report_id }}</h2>
+          <span class="muted">Created {{ selectedReport.created_at | date: 'medium' }}</span>
+        </div>
+        <button
+          type="button"
+          class="btn"
+          (click)="loadDetail(selectedReport.report_id)"
+          [disabled]="isLoadingDetail"
+        >
+          Refresh Detail
+        </button>
+      </div>
+
+      <div *ngIf="isLoadingDetail" class="loading">Loading report...</div>
+      <div *ngIf="detailError" class="alert alert-error">{{ detailError }}</div>
+
+      <div class="detail-content" *ngIf="!isLoadingDetail && !detailError">
+        <dl>
+          <div>
+            <dt>Date</dt>
+            <dd>{{ selectedReport.report_date }}</dd>
+          </div>
+          <div>
+            <dt>Start / End</dt>
+            <dd>{{ displayText(selectedReport.start_time) }} to {{ displayText(selectedReport.end_time) }}</dd>
+          </div>
+          <div>
+            <dt>Clients</dt>
+            <dd>{{ selectedReport.clients.length }}</dd>
+          </div>
+        </dl>
+
+        <section class="clients-detail">
+          <h3>Client Entries</h3>
+          <div class="client-detail-card" *ngFor="let client of selectedReport.clients">
+            <header>
+              <strong>#{{ client.ordinal_no }} - {{ client.client_name?.trim() || 'Unnamed client' }}</strong>
+              <span class="status-badge" [ngClass]="statusClass(client.status)">{{ client.status }}</span>
+            </header>
+            <dl>
+              <div>
+                <dt>Details</dt>
+                <dd>{{ displayText(client.details) }}</dd>
+              </div>
+              <div>
+                <dt>Notes</dt>
+                <dd>{{ displayText(client.notes) }}</dd>
+              </div>
+              <div>
+                <dt>Action Required</dt>
+                <dd>{{ displayText(client.action_required) }}</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>

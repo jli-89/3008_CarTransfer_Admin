@@ -1,12 +1,9 @@
 <div class="daily-report-list-container">
-  <div class="header">
-    <h1>Daily Reports</h1>
-    <div class="header-actions">
-      <a *ngIf="showCreateButton" class="btn primary" routerLink="/admin/daily-reports/new">New Daily Report</a>
-      <a *ngIf="showMyReportsLink" class="btn" routerLink="/admin/my-daily-reports">My Reports</a>
-      <button type="button" class="btn" (click)="refreshCurrentPage()" [disabled]="isLoadingList">Refresh</button>
-    </div>
-  </div>
+  <app-admin-header title="Daily Reports">
+    <a *ngIf="showCreateButton" class="btn primary" routerLink="/admin/daily-reports/new">New Daily Report</a>
+    <a *ngIf="showMyReportsLink" class="btn" routerLink="/admin/my-daily-reports-v2">My Reports2</a>
+    <button type="button" class="btn" (click)="refreshCurrentPage()" [disabled]="isLoadingList">Refresh</button>
+  </app-admin-header>
 
   <section class="filters-card">
     <div class="filter-group">
@@ -111,7 +108,7 @@
           </div>
           <div>
             <dt>Start / End</dt>
-            <dd>{{ displayText(selectedReport.start_time) }} – {{ displayText(selectedReport.end_time) }}</dd>
+            <dd>{{ displayText(selectedReport.start_time) }} to {{ displayText(selectedReport.end_time) }}</dd>
           </div>
           <div>
             <dt>Clients</dt>

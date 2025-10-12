@@ -1,5 +1,7 @@
 ﻿<div class="admin-dashboard-container">
-  <h1>Staff Dashboard</h1>
+  <app-staff-header title="Staff Dashboard">
+  </app-staff-header>
+
   
   <!-- 顯示現在登錄的是哪個用戶 -->
   <div class="user-banner" *ngIf="currentUserName || currentUserId !== null">
@@ -44,7 +46,7 @@
       <h3>Daily Reports</h3>
       <p>Compile or audit daily activity reports.</p>
       <div class="quick-card-actions">
-        <a class="quick-btn" routerLink="/staff/daily-reports">All Reports</a>
+        <!-- <a class="quick-btn" routerLink="/staff/daily-reports">All Reports</a> -->
         <a class="quick-btn secondary" routerLink="/staff/my-daily-reports">My Reports</a>
       </div>
     </div>

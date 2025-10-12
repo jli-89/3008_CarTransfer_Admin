@@ -9,10 +9,12 @@ import {
   DailyReportSummary,
 } from './daily-report.service';
 
+import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
+
 @Component({
   selector: 'app-daily-report-history',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AdminHeaderComponent],
   templateUrl: './daily-report-history.html',
   styleUrls: ['./daily-report-history.css'],
 })

@@ -195,4 +195,18 @@ export class DailyReportService {
         })
       );
   }
+
+  getMyReport(reportId: number): Observable<DailyReportDetail> {
+  return this.http
+    .get<ApiDailyReportResponse>(`${this.baseUrl}/my/daily-reports/${reportId}`)
+    .pipe(
+      map((res) => {
+        if (!res.ok || !res.data) {
+          throw new Error(res.error ?? 'Unable to load my daily report');
+        }
+        return res.data;
+      })
+    );
+}
+
 }

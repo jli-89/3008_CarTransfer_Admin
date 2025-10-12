@@ -32,71 +32,88 @@ class SignaturePadController {
   private drawing = false;
   private hasStroke = false;
   private listeners: Array<() => void> = [];
+  private pixelRatio = 1;
 
   constructor(private readonly canvasRef: ElementRef<HTMLCanvasElement>) {}
 
   init() {
     const canvas = this.canvasRef.nativeElement;
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    this.ctx = canvas.getContext('2d');
-    if (!this.ctx) {
-      throw new Error('Unable to initialise signature pad context');
-    }
-    this.ctx.lineWidth = 2;
-    this.ctx.lineCap = 'round';
-    this.ctx.strokeStyle = '#000000';
+    canvas.style.touchAction = 'none';
+    this.configureCanvas();
 
-    const startDraw = (event: MouseEvent | TouchEvent) => {
-      this.drawing = true;
-      this.ctx!.beginPath();
-      const pos = this.getPosition(event);
-      this.ctx!.moveTo(pos.x, pos.y);
-      this.hasStroke = true;
-    };
-
-    const draw = (event: MouseEvent | TouchEvent) => {
-      if (!this.drawing) return;
-      if (event instanceof TouchEvent) {
-        event.preventDefault();
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) {
+        return;
       }
+      if (!this.ctx) {
+        return;
+      }
+      this.drawing = true;
+      this.hasStroke = true;
+      canvas.setPointerCapture(event.pointerId);
+      this.ctx.beginPath();
       const pos = this.getPosition(event);
-      this.ctx!.lineTo(pos.x, pos.y);
-      this.ctx!.stroke();
+      this.ctx.moveTo(pos.x, pos.y);
     };
 
-    const stopDraw = () => {
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!this.drawing || !this.ctx) {
+        return;
+      }
+      event.preventDefault();
+      const pos = this.getPosition(event);
+      this.ctx.lineTo(pos.x, pos.y);
+      this.ctx.stroke();
+    };
+
+    const stopDrawing = (event: PointerEvent) => {
+      if (!this.drawing || !this.ctx) {
+        return;
+      }
       this.drawing = false;
-      this.ctx!.beginPath();
+      if (canvas.hasPointerCapture(event.pointerId)) {
+        canvas.releasePointerCapture(event.pointerId);
+      }
+      this.ctx.beginPath();
     };
 
-    const mouseDown = (e: MouseEvent) => startDraw(e);
-    const mouseMove = (e: MouseEvent) => draw(e);
-    const mouseUp = () => stopDraw();
-    const mouseLeave = () => stopDraw();
+    const handleResize = () => {
+      const snapshot = this.hasStroke ? canvas.toDataURL() : null;
+      this.configureCanvas();
+      if (snapshot && this.ctx && typeof Image !== 'undefined') {
+        const image = new Image();
+        image.onload = () => {
+          this.ctx!.drawImage(
+            image,
+            0,
+            0,
+            canvas.width / this.pixelRatio,
+            canvas.height / this.pixelRatio
+          );
+        };
+        image.src = snapshot;
+      }
+    };
 
-    const touchStart = (e: TouchEvent) => startDraw(e);
-    const touchMove = (e: TouchEvent) => draw(e);
-    const touchEnd = () => stopDraw();
+    const win = typeof window !== 'undefined' ? window : null;
 
-    canvas.addEventListener('mousedown', mouseDown);
-    canvas.addEventListener('mousemove', mouseMove);
-    canvas.addEventListener('mouseup', mouseUp);
-    canvas.addEventListener('mouseleave', mouseLeave);
-
-    canvas.addEventListener('touchstart', touchStart);
-    canvas.addEventListener('touchmove', touchMove);
-    canvas.addEventListener('touchend', touchEnd);
+    canvas.addEventListener('pointerdown', handlePointerDown);
+    canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('pointerup', stopDrawing);
+    canvas.addEventListener('pointerleave', stopDrawing);
+    if (win) {
+      win.addEventListener('resize', handleResize);
+    }
 
     this.listeners = [
-      () => canvas.removeEventListener('mousedown', mouseDown),
-      () => canvas.removeEventListener('mousemove', mouseMove),
-      () => canvas.removeEventListener('mouseup', mouseUp),
-      () => canvas.removeEventListener('mouseleave', mouseLeave),
-      () => canvas.removeEventListener('touchstart', touchStart),
-      () => canvas.removeEventListener('touchmove', touchMove),
-      () => canvas.removeEventListener('touchend', touchEnd),
+      () => canvas.removeEventListener('pointerdown', handlePointerDown),
+      () => canvas.removeEventListener('pointermove', handlePointerMove),
+      () => canvas.removeEventListener('pointerup', stopDrawing),
+      () => canvas.removeEventListener('pointerleave', stopDrawing),
     ];
+    if (win) {
+      this.listeners.push(() => win.removeEventListener('resize', handleResize));
+    }
   }
 
   destroy() {
@@ -105,9 +122,14 @@ class SignaturePadController {
   }
 
   clear() {
-    if (!this.ctx) return;
+    if (!this.ctx) {
+      return;
+    }
     const canvas = this.canvasRef.nativeElement;
+    this.ctx.save();
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.clearRect(0, 0, canvas.width, canvas.height);
+    this.ctx.restore();
     this.ctx.beginPath();
     this.hasStroke = false;
   }
@@ -119,13 +141,31 @@ class SignaturePadController {
     return this.canvasRef.nativeElement.toDataURL('image/png');
   }
 
-  private getPosition(event: MouseEvent | TouchEvent): { x: number; y: number } {
-    const rect = this.canvasRef.nativeElement.getBoundingClientRect();
-    if (event instanceof MouseEvent) {
-      return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  private configureCanvas(): void {
+    const canvas = this.canvasRef.nativeElement;
+    const rect = canvas.getBoundingClientRect();
+    const ratio = typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1;
+    this.pixelRatio = ratio;
+    canvas.width = Math.max(Math.floor(rect.width * ratio), 1);
+    canvas.height = Math.max(Math.floor(rect.height * ratio), 1);
+    this.ctx = canvas.getContext('2d');
+    if (!this.ctx) {
+      throw new Error('Unable to initialise signature pad context');
     }
-    const touch = event.touches[0];
-    return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.ctx.scale(ratio, ratio);
+    this.ctx.lineWidth = 2;
+    this.ctx.lineCap = 'round';
+    this.ctx.strokeStyle = '#000000';
+  }
+
+  private getPosition(event: PointerEvent): { x: number; y: number } {
+    const canvas = this.canvasRef.nativeElement;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (event.clientX - rect.left),
+      y: (event.clientY - rect.top),
+    };
   }
 }
 

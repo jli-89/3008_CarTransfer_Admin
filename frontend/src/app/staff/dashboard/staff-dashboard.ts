@@ -8,13 +8,13 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { AuthService } from '../../auth/auth.service';
 import { Router } from '@angular/router';
-
+import { StaffHeaderComponent } from '../../shared/staff-header/staff-header';
 
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule,StaffHeaderComponent],
   templateUrl: './staff-dashboard.html',
   styleUrls: ['./staff-dashboard.css']
 })
