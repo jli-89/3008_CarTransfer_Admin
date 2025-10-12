@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { StaffHeaderComponent } from '../../shared/staff-header/staff-header';
 
 @Component({
   selector: 'app-staff-report',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule,StaffHeaderComponent],
   templateUrl: './staff-report.html',
   styleUrls: ['./staff-report.css']
 })

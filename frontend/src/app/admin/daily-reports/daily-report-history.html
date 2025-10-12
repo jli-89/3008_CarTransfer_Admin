@@ -1,11 +1,8 @@
 <div class="daily-report-history-container">
-  <div class="header">
-    <h1>My Daily Reports</h1>
-    <div class="header-actions">
-      <a class="btn" routerLink="/admin/daily-reports">All Reports</a>
-      <a class="btn primary" routerLink="/admin/daily-reports/new">New Report</a>
-    </div>
-  </div>
+  <app-admin-header title="My Daily Reports">
+    <!-- 只保留 New Report 按鈕 -->
+    <a class="btn primary" routerLink="/admin/daily-reports/new">New Report</a>
+  </app-admin-header>
 
   <section class="filters-card">
     <div class="filter-group">
@@ -65,4 +62,5 @@
       <button type="button" class="btn" (click)="nextPage()" [disabled]="meta && currentPage >= meta.totalPages">Next</button>
     </div>
   </div>
+
 </div>

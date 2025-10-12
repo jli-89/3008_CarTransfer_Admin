@@ -5,6 +5,10 @@ import { Router } from '@angular/router';
 
 import { DailyReportService, CreateDailyReportPayload, DailyReportClientPayload } from './daily-report.service';
 import { TimesheetManagementService, StaffOption } from '../timesheets/timesheet-management.service';
+import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
+import { Location } from '@angular/common';
+
+import { StaffHeaderComponent } from '../../shared/staff-header/staff-header';
 
 interface ClientFormState {
   client_name: string;
@@ -17,7 +21,7 @@ interface ClientFormState {
 @Component({
   selector: 'app-daily-report-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule,AdminHeaderComponent,StaffHeaderComponent],
   templateUrl: './daily-report-form.html',
   styleUrls: ['./daily-report-form.css'],
 })
@@ -39,7 +43,8 @@ export class DailyReportFormComponent implements OnInit {
   constructor(
     private readonly dailyReportService: DailyReportService,
     private readonly staffService: TimesheetManagementService,
-    private readonly router: Router
+    private readonly router: Router,
+    public location: Location // ✅ 新增這行
   ) {}
 
   ngOnInit(): void {
@@ -110,9 +115,13 @@ export class DailyReportFormComponent implements OnInit {
     });
   }
 
-  navigateToList(): void {
+navigateToList(): void {
+  if (this.location.path().startsWith('/staff')) {
+    this.router.navigate(['/staff/my-daily-reports']);
+  } else {
     this.router.navigate(['/admin/daily-reports']);
   }
+}
 
   private resetForm(): void {
     this.reportDate = '';

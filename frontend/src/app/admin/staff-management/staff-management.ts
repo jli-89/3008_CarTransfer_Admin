@@ -521,6 +521,7 @@ import {
 } from './staff-management.service';
 
 import { DashboardService, CurrentUser } from '../dashboard/dashboard.service';
+import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
 
 interface StaffRow {
   id: number;
@@ -554,7 +555,7 @@ interface StaffEditFormState {
 @Component({
   selector: 'app-staff-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule,AdminHeaderComponent],
   templateUrl: './staff-management.html',
   styleUrls: ['./staff-management.css']
 })

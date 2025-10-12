@@ -1,21 +1,14 @@
 <div class="daily-report-list-container">
-  <app-admin-header title="Daily Reports">
-    <a *ngIf="showCreateButton" class="btn primary" routerLink="/admin/daily-reports/new">New Daily Report</a>
-    <a *ngIf="showMyReportsLink" class="btn" routerLink="/admin/my-daily-reports-v2">My Reports2</a>
-    <button type="button" class="btn" (click)="refreshCurrentPage()" [disabled]="isLoadingList">Refresh</button>
-  </app-admin-header>
+<app-staff-header title="My Daily Reports">
+  <a class="btn primary" routerLink="/staff/daily-reports/new">New Daily Report</a>
+  <button type="button" class="btn" (click)="refreshCurrentPage()" [disabled]="isLoadingList">
+    Refresh
+  </button>
+</app-staff-header>
+
 
   <section class="filters-card">
     <div class="filter-group">
-      <label>
-        Staff
-        <select [(ngModel)]="filters.staff_user_id" name="filterStaff">
-          <option value="">All staff</option>
-          <option *ngFor="let option of staffOptions" [value]="option.user_id">
-            {{ option.display }}
-          </option>
-        </select>
-      </label>
       <label>
         From
         <input type="date" [(ngModel)]="filters.date_from" name="filterFrom" />
@@ -49,7 +42,6 @@
           <tr>
             <th>ID</th>
             <th>Date</th>
-            <th>Staff</th>
             <th>Clients</th>
             <th>Created</th>
           </tr>
@@ -62,23 +54,32 @@
           >
             <td>{{ report.report_id }}</td>
             <td>{{ report.report_date }}</td>
-            <td>{{ displayStaffName(report) }}</td>
             <td>{{ report.client_count }}</td>
             <td>{{ report.created_at | date: 'medium' }}</td>
           </tr>
           <tr *ngIf="!reports.length && !isLoadingList">
-            <td colspan="5" class="muted">No reports found.</td>
+            <td colspan="4" class="muted">No reports found.</td>
           </tr>
         </tbody>
       </table>
+
       <div *ngIf="isLoadingList" class="loading">Loading reports...</div>
       <div *ngIf="meta" class="list-meta">
         Total: {{ meta.total }} | Page {{ meta.page }} / {{ meta.totalPages }}
       </div>
       <div *ngIf="meta && meta.totalPages > 1" class="pagination">
-        <button type="button" class="btn" (click)="prevPage()" [disabled]="currentPage <= 1">Previous</button>
+        <button type="button" class="btn" (click)="prevPage()" [disabled]="currentPage <= 1">
+          Previous
+        </button>
         <span>Page {{ currentPage }} of {{ meta.totalPages }}</span>
-        <button type="button" class="btn" (click)="nextPage()" [disabled]="meta && currentPage >= meta.totalPages">Next</button>
+        <button
+          type="button"
+          class="btn"
+          (click)="nextPage()"
+          [disabled]="meta && currentPage >= meta.totalPages"
+        >
+          Next
+        </button>
       </div>
     </div>
 
@@ -88,7 +89,12 @@
           <h2>Report #{{ selectedReport.report_id }}</h2>
           <span class="muted">Created {{ selectedReport.created_at | date: 'medium' }}</span>
         </div>
-        <button type="button" class="btn" (click)="loadDetail(selectedReport.report_id)" [disabled]="isLoadingDetail">
+        <button
+          type="button"
+          class="btn"
+          (click)="loadDetail(selectedReport.report_id)"
+          [disabled]="isLoadingDetail"
+        >
           Refresh Detail
         </button>
       </div>
@@ -101,10 +107,6 @@
           <div>
             <dt>Date</dt>
             <dd>{{ selectedReport.report_date }}</dd>
-          </div>
-          <div>
-            <dt>Staff Member</dt>
-            <dd>{{ displayStaffName(selectedReport) }}</dd>
           </div>
           <div>
             <dt>Start / End</dt>
@@ -143,4 +145,3 @@
     </div>
   </div>
 </div>
-

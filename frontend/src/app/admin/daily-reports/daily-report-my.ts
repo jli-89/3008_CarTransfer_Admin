@@ -1,8 +1,7 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-
 import {
   DailyReportDetail,
   DailyReportListMeta,
@@ -10,23 +9,19 @@ import {
   DailyReportService,
   DailyReportSummary,
 } from './daily-report.service';
-import { TimesheetManagementService, StaffOption } from '../timesheets/timesheet-management.service';
+import { StaffHeaderComponent } from '../../shared/staff-header/staff-header';
 import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
+import { Location } from '@angular/common';
 
 @Component({
-  selector: 'app-daily-report-list',
+  selector: 'app-daily-report-my',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, AdminHeaderComponent],
-  templateUrl: './daily-report-list.html',
-  styleUrls: ['./daily-report-list.css'],
+  imports: [CommonModule, FormsModule, RouterModule,AdminHeaderComponent,StaffHeaderComponent],
+  templateUrl: './daily-report-my.html',
+  styleUrls: ['./daily-report-my.css'],
 })
-export class DailyReportListComponent implements OnInit {
-  @Input() showCreateButton = true;
-  @Input() showMyReportsLink = true;
-
+export class DailyReportMyComponent implements OnInit {
   filters: DailyReportQuery = {};
-  staffOptions: StaffOption[] = [];
-
   reports: DailyReportSummary[] = [];
   selectedReport: DailyReportDetail | null = null;
   meta: DailyReportListMeta | null = null;
@@ -38,16 +33,9 @@ export class DailyReportListComponent implements OnInit {
   errorMessage: string | null = null;
   detailError: string | null = null;
 
-  constructor(
-    private readonly dailyReportService: DailyReportService,
-    private readonly staffService: TimesheetManagementService
-  ) {}
+  constructor(private readonly dailyReportService: DailyReportService,  public location: Location) {}
 
   ngOnInit(): void {
-    this.staffService.listStaffOptions().subscribe({
-      next: (options) => (this.staffOptions = options),
-      error: () => (this.staffOptions = []),
-    });
     this.fetchReports();
   }
 
@@ -62,31 +50,22 @@ export class DailyReportListComponent implements OnInit {
     this.fetchReports();
   }
 
-  goToPage(page: number): void {
-    if (!this.meta) {
-      return;
-    }
-    const totalPages = this.meta.totalPages || 1;
-    const target = Math.min(Math.max(page, 1), totalPages);
-    if (target === this.currentPage) {
-      return;
-    }
-    this.currentPage = target;
-    this.fetchReports(false);
-  }
-
   nextPage(): void {
     if (this.meta && this.currentPage < this.meta.totalPages) {
-      this.currentPage += 1;
+      this.currentPage++;
       this.fetchReports(false);
     }
   }
 
   prevPage(): void {
     if (this.currentPage > 1) {
-      this.currentPage -= 1;
+      this.currentPage--;
       this.fetchReports(false);
     }
+  }
+
+  refreshCurrentPage(): void {
+    this.fetchReports(false);
   }
 
   selectReport(report: DailyReportSummary): void {
@@ -96,15 +75,11 @@ export class DailyReportListComponent implements OnInit {
     this.loadDetail(report.report_id);
   }
 
-  refreshCurrentPage(): void {
-    this.fetchReports(false);
-  }
-
   private fetchReports(resetSelection: boolean = true): void {
     this.isLoadingList = true;
     this.errorMessage = null;
     this.dailyReportService
-      .listReports(this.filters, this.currentPage, this.pageSize)
+      .listMyReports(this.currentPage, this.pageSize, this.filters)
       .subscribe({
         next: (result) => {
           this.reports = result.data;
@@ -112,23 +87,10 @@ export class DailyReportListComponent implements OnInit {
           this.currentPage = result.meta.page;
           this.pageSize = result.meta.pageSize;
           this.isLoadingList = false;
-
-          if (resetSelection) {
-            this.selectedReport = null;
-          } else if (this.selectedReport) {
-            const match = result.data.find((row) => row.report_id === this.selectedReport!.report_id);
-            if (!match) {
-              this.selectedReport = null;
-            } else {
-              this.selectedReport = {
-                ...this.selectedReport,
-                ...match,
-              };
-            }
-          }
+          if (resetSelection) this.selectedReport = null;
         },
         error: (err) => {
-          this.errorMessage = err instanceof Error ? err.message : 'Unable to load daily reports.';
+          this.errorMessage = err instanceof Error ? err.message : 'Unable to load my reports.';
           this.isLoadingList = false;
         },
       });
@@ -150,30 +112,14 @@ export class DailyReportListComponent implements OnInit {
     });
   }
 
-  statusClass(status: string | null | undefined): string {
-    if (!status) {
-      return 'status-unknown';
-    }
-    return `status-${status.toLowerCase().replace(/\s+/g, '-')}`;
-  }
-
-  displayStaffName(report: { staff_name?: string | null; staff_user_id?: number | null }): string {
-    const staffName = report.staff_name?.trim();
-    if (staffName) {
-      return staffName;
-    }
-    if (report.staff_user_id) {
-      return `#${report.staff_user_id}`;
-    }
-    return 'N/A';
-  }
-
   displayText(value: string | null | undefined): string {
-    if (value === null || value === undefined) {
-      return 'N/A';
-    }
+    if (value === null || value === undefined) return 'N/A';
     const trimmed = `${value}`.trim();
     return trimmed ? trimmed : 'N/A';
   }
-}
 
+  statusClass(status: string | null | undefined): string {
+    if (!status) return 'status-unknown';
+    return `status-${status.toLowerCase().replace(/\s+/g, '-')}`;
+  }
+}

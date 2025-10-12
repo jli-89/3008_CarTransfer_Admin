@@ -20,6 +20,9 @@ import {
   OrderUserOption,
 } from './order-management.service';
 import { AuthService } from '../../auth/auth.service';
+import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
+import { StaffHeaderComponent } from '../../shared/staff-header/staff-header';
+import { Router } from '@angular/router';
 
 interface FiltersState {
   search: string;
@@ -85,11 +88,13 @@ interface NewOrderForm {
 @Component({
   selector: 'app-order-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AdminHeaderComponent, StaffHeaderComponent],
   templateUrl: './order-management.html',
   styleUrls: ['./order-management.css']
 })
 export class OrderManagementComponent implements OnInit {
+  isStaff: boolean = false; // 判斷是否為 staff 用戶
+  
   autoExpandAll: boolean = true; // 👉 true 就會自動展開所有 items
   orders: OrderRecord[] = [];
   meta: OrderListMeta | null = null;
@@ -146,9 +151,12 @@ export class OrderManagementComponent implements OnInit {
   itemEditError: string | null = null;
   isSavingItem = false;
 
-  constructor(private orderService: OrderManagementService, private auth: AuthService) {}
+  constructor(private orderService: OrderManagementService, private auth: AuthService, private router: Router) {}
 
   ngOnInit(): void {
+    // 檢查目前 URL 是否以 "/staff/" 開頭
+    this.isStaff = this.router.url.startsWith('/staff/');
+
     const authUser = this.auth.getUser<any>();
     if (authUser) {
       const maybeId = Number(authUser.user_id);
@@ -165,6 +173,8 @@ export class OrderManagementComponent implements OnInit {
     this.loadStaffOptions();
     this.loadOrders();
   }
+
+  
 
   fetchItemStatusOptions(): void {
     this.orderService.getTransferStatusOptions().subscribe({

@@ -12,6 +12,7 @@ import {
 } from './staff-management.service';
 
 import { DashboardService, CurrentUser } from '../../admin/dashboard/dashboard.service';
+import { StaffHeaderComponent } from '../../shared/staff-header/staff-header';
 
 
 interface StaffRow {
@@ -46,7 +47,7 @@ interface StaffEditFormState {
 @Component({
   selector: 'app-staff-self-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule,StaffHeaderComponent],
   templateUrl: './staff-management.html',
   styleUrls: ['./staff-management.css']
 })

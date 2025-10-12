@@ -1,11 +1,12 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { StaffHeaderComponent } from '../../shared/staff-header/staff-header';
 
 @Component({
   selector: 'app-staff-timesheet',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule,StaffHeaderComponent],
   templateUrl: './staff-timesheet.html',
   styleUrls: ['./staff-timesheet.css']
 })

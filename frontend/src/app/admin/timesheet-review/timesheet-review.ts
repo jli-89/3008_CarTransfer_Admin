@@ -2,10 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
+import { AdminHeaderComponent } from '../../shared/admin-header/admin-header';
+
 @Component({
   selector: 'app-timesheet-review',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule,AdminHeaderComponent],
   templateUrl: './timesheet-review.html',
   styleUrls: ['./timesheet-review.css']
 })

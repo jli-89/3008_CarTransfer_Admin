@@ -1,5 +1,14 @@
 <div class="order-management-container">
-  <h1>Order Management</h1>
+  <!-- staff version -->
+<ng-container *ngIf="isStaff; else adminHeader">
+  <app-staff-header title="Order Management"></app-staff-header>
+</ng-container>
+
+<!-- admin version -->
+<ng-template #adminHeader>
+  <app-admin-header title="Order Management"></app-admin-header>
+</ng-template>
+
 
   <section class="filters-card">
     <div class="filter-row">

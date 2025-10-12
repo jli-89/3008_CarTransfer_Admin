@@ -1,5 +1,6 @@
 <div class="log-viewer">
-  <h1>System Log Viewer</h1>
+  <app-admin-header title="Log Viewer">
+  </app-admin-header>
 
   <form class="filter-grid" (ngSubmit)="applyFilters()">
     <label>
@@ -41,7 +42,7 @@
   <section *ngFor="let source of operationSources" class="card">
     <header class="card-header">
       <h2>
-        Operation Logs —
+        Operation Logs ï¿½
         {{ source === 'car_transport2' ? 'car_transport2 (orders)' : 'car_transport_quotes (quotes)' }}
       </h2>
       <button type="button" class="link-button" (click)="toggleOperations(source)">
@@ -105,7 +106,7 @@
 
   <section class="card">
     <header class="card-header">
-      <h2>Audit Logs — car_transport_audit</h2>
+      <h2>Audit Logs ï¿½ car_transport_audit</h2>
       <button type="button" class="link-button" (click)="toggleAudit()">
         {{ auditState.visible ? 'Hide' : 'Show' }}
       </button>
