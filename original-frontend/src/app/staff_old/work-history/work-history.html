@@ -1,0 +1,39 @@
+<div class="work-history-container">
+  <h1>Work History</h1>
+  <p>Search what other staff have done with clients since Day 1 of the system.</p>
+
+  <!-- Search Bar -->
+  <input
+    type="text"
+    placeholder="Search by staff, client, date, or notes..."
+    [(ngModel)]="searchTerm"
+    class="search-bar"
+  />
+
+  <!-- Results -->
+  <div *ngIf="filterHistory().length > 0; else noData">
+    <div *ngFor="let record of filterHistory(); let i = index" class="report-card">
+      <h2>{{ record.date }} | {{ record.start }} - {{ record.end }}</h2>
+      <p><b>Staff:</b> {{ record.staffName }}</p>
+
+      <div *ngFor="let c of record.clients" class="client-section">
+        <p><b>Client:</b> {{ c.clientName }}</p>
+        <p><b>Details:</b> {{ c.details }}</p>
+        <p><b>Notes:</b> {{ c.notes }}</p>
+        <p><b>Action Required:</b> {{ c.actionRequired }}</p>
+        <p><b>Status:</b> {{ c.solved }}</p>
+        <div *ngIf="c.photo">
+          <img [src]="c.photo" width="150" />
+        </div>
+        <hr>
+      </div>
+
+      <!-- Delete Button -->
+      <button class="delete-btn" (click)="deleteReport(i)">Delete Report</button>
+    </div>
+  </div>
+
+  <ng-template #noData>
+    <p class="no-data">No work history available yet.</p>
+  </ng-template>
+</div>

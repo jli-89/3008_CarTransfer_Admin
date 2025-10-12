@@ -1,0 +1,50 @@
+怎么开/关这些调试日志？
+
+开：PowerShell 里先执行 （或当前窗口 "$env:DEBUG_AUTH='1'"），然后重启后端。
+
+关：setx DEBUG_AUTH ""（或当前窗口清空），再重启后端。
+
+这样你随时可以用环境变量控制是否打印那些 [LOGIN] / [SQL] / [DB] 日志。
+
+
+怎么开/关日志？
+Windows（PowerShell）
+
+仅当前窗口生效：
+
+$env:DEBUG_AUTH = "1"   # 开
+# $env:DEBUG_AUTH = ""  # 关（置空）
+
+
+持久（新开窗口也生效）：
+
+setx DEBUG_AUTH "1"
+# setx DEBUG_AUTH ""   # 关
+
+
+注意：setx 对“当前这个窗口”不生效；执行后请重新打开一个终端再启动后端。
+
+PowerShell
+Turn on 	setx DEBUG_AUTH "1" 	then restart the server
+Turn off	setx DEBUG_AUTH ""	then restart the server
+
+Therefore you can use environment variable to decide if [LOGIN] / [SQL] / [DB] log will be printed
+
+查看环境变量值
+
+PowerShell：
+
+$env:DEBUG_AUTH                                   # 当前进程里的值
+[Environment]::GetEnvironmentVariable("DEBUG_AUTH","User")     # 用户范围
+[Environment]::GetEnvironmentVariable("DEBUG_AUTH","Machine")  # 机器范围
+
+
+cmd：
+
+echo %DEBUG_AUTH%     # 当前进程里的值
+set DEBUG_AUTH        # 也能看到
+
+
+Node 里直接看：
+
+node -e "console.log(process.env.DEBUG_AUTH)"

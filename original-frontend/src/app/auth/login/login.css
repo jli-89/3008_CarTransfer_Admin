@@ -1,0 +1,76 @@
+.login-container {
+  width: 90%;
+  max-width: 450px;
+  margin: 100px auto;
+  background: #fff;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  text-align: center;
+}
+
+h1 {
+  font-size: 36px;
+  margin-bottom: 25px;
+  color: #333;
+}
+
+label {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 6px;
+  text-align: left;
+  color: #444;
+}
+
+input {
+  width: 100%;
+  padding: 14px;
+  font-size: 18px;
+  border-radius: 8px;
+  border: 2px solid #ccc;
+  margin-bottom: 20px;
+  outline: none;
+  transition: border 0.2s ease;
+}
+
+input:focus {
+  border-color: #007bff;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  font-size: 20px;
+  border: none;
+  border-radius: 8px;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+.error {
+  color: red;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+.forgot-password {
+  margin-top: 15px;
+}
+
+.forgot-password a {
+  font-size: 16px;
+  color: #007bff;
+  text-decoration: none;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}

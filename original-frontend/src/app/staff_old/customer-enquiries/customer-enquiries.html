@@ -1,0 +1,79 @@
+<div class="customer-enquiries-container">
+  <h1>Customer Quotes & Bookings</h1>
+
+  <!-- Add New Entry -->
+  <button (click)="addNewEnquiry()" class="add-button">
+    Add New Quote/Booking
+  </button>
+
+  <!-- Search bar -->
+  <input
+    type="text"
+    placeholder="Search customer enquiries..."
+    [(ngModel)]="searchTerm"
+    class="search-bar"
+  />
+
+  <table class="customer-enquiries-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Client Name</th>
+        <th>Email</th>
+        <th>Item Count</th>
+        <th>Pickup Suburb</th>
+        <th>Delivery Suburb</th>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Phone</th>
+        <th>Vehicle Details</th>
+        <th>Date</th>
+        <th>Status</th>
+        <th>Message</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of filterItems(customerEnquiries)">
+        <td>{{ item.id }}</td>
+        <td>
+          <input [disabled]="item.submitted" [(ngModel)]="item.clientName" (ngModelChange)="updateField(item,'clientName',$event)" />
+        </td>
+        <td>
+          <input [disabled]="item.submitted" [(ngModel)]="item.email" (ngModelChange)="updateField(item,'email',$event)" />
+        </td>
+        <td>
+          <input type="number" [disabled]="item.submitted" [(ngModel)]="item.itemCount" (ngModelChange)="updateField(item,'itemCount',$event)" />
+        </td>
+        <td>
+          <input [disabled]="item.submitted" [(ngModel)]="item.pickupSuburb" (ngModelChange)="updateField(item,'pickupSuburb',$event)" />
+        </td>
+        <td>
+          <input [disabled]="item.submitted" [(ngModel)]="item.deliverySuburb" (ngModelChange)="updateField(item,'deliverySuburb',$event)" />
+        </td>
+        <td>
+          <input [disabled]="item.submitted" [(ngModel)]="item.firstName" (ngModelChange)="updateField(item,'firstName',$event)" />
+        </td>
+        <td>
+          <input [disabled]="item.submitted" [(ngModel)]="item.lastName" (ngModelChange)="updateField(item,'lastName',$event)" />
+        </td>
+        <td>
+          <input [disabled]="item.submitted" [(ngModel)]="item.phone" (ngModelChange)="updateField(item,'phone',$event)" />
+        </td>
+        <td>
+          <input [disabled]="item.submitted" [(ngModel)]="item.vehicleDetails" (ngModelChange)="updateField(item,'vehicleDetails',$event)" />
+        </td>
+        <td>{{ item.submittedDate }}</td>
+        <td>{{ item.status }}</td>
+        <td>
+          <input [disabled]="item.submitted" [(ngModel)]="item.message" (ngModelChange)="updateField(item,'message',$event)" />
+        </td>
+        <td>
+          <button [disabled]="item.submitted" (click)="submitEnquiry(item)" class="submit-button">
+            Submit
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

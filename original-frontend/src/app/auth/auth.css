@@ -1,0 +1,248 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f0f2f5; /* Light grey background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh; /* Use min-height to allow content to grow */
+  margin: 0;
+  padding: 20px; /* Add some padding for smaller screens */
+  box-sizing: border-box; /* Include padding in element's total width and height */
+}
+
+.auth-container {
+  background-color: #ffffff;
+  padding: 30px 50px; /* More padding for a premium feel */
+  border-radius: 12px; /* Softer rounded corners */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); /* More prominent shadow */
+  width: 100%;
+  max-width: 450px; /* Slightly wider container */
+  text-align: center;
+  margin: auto; /* Center in case of margin */
+}
+
+h2 {
+  margin-bottom: 15px;
+  color: #2c3e50; /* Darker heading color */
+  font-size: 2.2em; /* Larger heading */
+  font-weight: 600; /* Slightly bolder */
+}
+
+.account-prompt {
+  margin-bottom: 25px;
+  color: #7f8c8d; /* Muted text color */
+  font-size: 0.95em;
+}
+
+.account-prompt a {
+  color: #007bff; /* Bright blue for links */
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease-in-out;
+}
+
+.account-prompt a:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+.social-login-buttons {
+  margin-bottom: 25px;
+}
+
+.social-button {
+  display: flex; /* Align icon and text */
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px 20px;
+  margin-bottom: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  color: #fff; /* Default text color for social buttons */
+}
+
+.social-button img {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+}
+
+.social-button.facebook {
+  background-color: #3b5998;
+}
+.social-button.facebook:hover {
+  background-color: #2d4373;
+  box-shadow: 0 2px 8px rgba(59, 89, 152, 0.4);
+}
+
+.social-button.google {
+  background-color: #ffffff;
+  color: #555;
+  border: 1px solid #dadce0;
+}
+.social-button.google:hover {
+  background-color: #f8f8f8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.social-button.google img { /* Adjust Google icon if it needs special styling */
+  border-radius: 50%; /* Google icon often looks good with a circle */
+}
+
+
+.social-button.apple {
+  background-color: #000000;
+}
+.social-button.apple:hover {
+  background-color: #333333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.social-button.line {
+  background-color: #00c300; /* LINE green */
+}
+.social-button.line:hover {
+  background-color: #009900;
+  box-shadow: 0 2px 8px rgba(0, 195, 0, 0.4);
+}
+
+
+.separator {
+  margin: 30px 0;
+  font-size: 0.9em;
+  color: #999;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.separator::before,
+.separator::after {
+  content: '';
+  flex-grow: 1;
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 0 10px;
+}
+
+.email-login-button {
+  width: 100%;
+  padding: 14px;
+  background-color: #dc3545; /* Red for emphasis */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  margin-bottom: 25px; /* Space before the form appears */
+}
+.email-login-button:hover {
+  background-color: #c82333;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.email-password-form {
+  margin-top: 20px;
+}
+
+form div {
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #444;
+}
+
+input[type="email"],
+input[type="password"],
+input[type="text"],
+input[type="date"],
+input[type="tel"] {
+  width: calc(100% - 24px); /* Account for padding */
+  padding: 12px;
+  border: 1px solid #ced4da; /* Lighter border */
+  border-radius: 8px;
+  font-size: 1em;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  -webkit-appearance: none; /* For consistent styling on iOS */
+  -moz-appearance: none;
+  appearance: none;
+}
+
+input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Subtle focus ring */
+  outline: none;
+}
+
+.submit-button {
+  width: 100%;
+  padding: 14px;
+  background-color: #28a745; /* Green for submission */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  margin-top: 10px; /* Space after inputs */
+}
+
+.submit-button:hover {
+  background-color: #218838;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.error {
+  color: #dc3545; /* Danger red */
+  margin-top: 15px;
+  font-weight: 500;
+  font-size: 0.9em;
+}
+
+.success {
+  color: #28a745; /* Success green */
+  margin-top: 15px;
+  font-weight: 500;
+  font-size: 0.9em;
+}
+
+.forgot-password-link {
+  margin-top: 15px;
+  font-size: 0.9em;
+}
+
+.forgot-password-link a {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.forgot-password-link a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .auth-container {
+    padding: 25px 30px;
+    box-shadow: none; /* No shadow on small screens */
+    border-radius: 0;
+    max-width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+}

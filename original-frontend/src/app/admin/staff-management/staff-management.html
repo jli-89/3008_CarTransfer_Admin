@@ -1,0 +1,185 @@
+<div class="staff-management-container">
+  <h1>Admin Staff Management</h1>
+
+  <!-- ✅ My Profile -->
+  <div class="my-profile-card">
+    <h2>My Profile</h2>
+
+    <!-- Loading -->
+    <div *ngIf="isLoadingProfile" class="loading">Loading profile...</div>
+
+    <!-- Error / feedback -->
+    <div *ngIf="!isLoadingProfile && profileMessage" class="alert alert-error">
+      {{ profileMessage }}
+    </div>
+
+    <!-- Summary (loaded & not editing) -->
+    <div
+      class="profile-summary"
+      *ngIf="!isLoadingProfile && currentUser && !isEditingProfile"
+    >
+      <p><strong>Name:</strong> {{ currentUser.real_name || currentUser.user_name }}</p>
+      <p><strong>Email:</strong> {{ currentUser.email || 'N/A' }}</p>
+      <p><strong>Office:</strong> {{ currentUser.office_location || 'N/A' }}</p>
+
+      <button type="button" class="btn primary" (click)="editMyProfile()">Edit My Info</button>
+    </div>
+
+    <!-- Edit form (loaded & editing) -->
+    <div
+      class="profile-edit-form"
+      *ngIf="!isLoadingProfile && currentUser && isEditingProfile"
+    >
+      <label>Name:</label>
+      <input type="text" [(ngModel)]="editProfileForm.name" />
+
+      <label>Email:</label>
+      <input type="email" [(ngModel)]="editProfileForm.email" />
+
+      <label>Office Location:</label>
+      <input type="text" [(ngModel)]="editProfileForm.officeLocation" />
+
+      <label>New Password:</label>
+      <input
+        type="password"
+        [(ngModel)]="editProfileForm.password"
+        placeholder="Leave blank to keep current password"
+      />
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn primary"
+          (click)="saveMyProfile()"
+          [disabled]="isSavingProfile"
+        >
+          Save
+        </button>
+        <button type="button" class="btn" (click)="cancelEditMyProfile()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- ====== 下面是原本的管理功能（保持不變） ====== -->
+
+  <div *ngIf="errorMessage" class="staff-error">
+    {{ errorMessage }}
+  </div>
+
+  <button class="add-btn" (click)="openAddStaffForm()">+ Add Staff</button>
+
+  <div style="margin: 8px 0;">
+    <button type="button" class="toggle" (click)="showDeletedOnly = !showDeletedOnly">
+      {{ showDeletedOnly ? 'Show Active Staff' : 'Show Deleted Employees' }}
+    </button>
+  </div>
+
+  <div *ngIf="showAddForm" class="add-staff-form">
+    <h3>Add New Staff</h3>
+
+    <label>Name:</label>
+    <input [(ngModel)]="newStaff.name" type="text" />
+
+    <label>Email:</label>
+    <input [(ngModel)]="newStaff.email" type="email" />
+
+    <label>Role:</label>
+    <select [(ngModel)]="newStaff.role">
+      <option value="staff">Staff</option>
+      <option value="admin">Admin</option>
+    </select>
+
+    <label>Username:</label>
+    <input [(ngModel)]="newStaff.username" type="text" />
+
+    <label>Password:</label>
+    <input [(ngModel)]="newStaff.password" type="password" />
+
+    <label>Office Location:</label>
+    <input [(ngModel)]="newStaff.officeLocation" type="text" />
+
+    <div class="form-actions">
+      <button type="button" (click)="addStaff()" [disabled]="isSaving">Save</button>
+      <button type="button" (click)="cancelAddStaff()">Cancel</button>
+    </div>
+  </div>
+
+  <div *ngIf="editingStaffId !== null && editStaff" class="edit-staff-form">
+    <h3>Edit Staff</h3>
+
+    <label>Name:</label>
+    <input [(ngModel)]="editStaff.name" type="text" />
+
+    <label>Email:</label>
+    <input [(ngModel)]="editStaff.email" type="email" />
+
+    <label>Role:</label>
+    <select [(ngModel)]="editStaff.role">
+      <option value="staff">Staff</option>
+      <option value="admin">Admin</option>
+      <option value="superadmin">Superadmin</option>
+      <option value="deleted employees">Deleted Employees</option>
+    </select>
+
+    <label>Username:</label>
+    <input [(ngModel)]="editStaff.username" type="text" />
+
+    <label>Status:</label>
+    <select [(ngModel)]="editStaff.status">
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+    </select>
+
+    <label>Office Location:</label>
+    <input [(ngModel)]="editStaff.officeLocation" type="text" />
+
+    <div class="form-actions">
+      <button type="button" (click)="saveEditStaff()" [disabled]="isUpdating">Save</button>
+      <button type="button" (click)="cancelEditStaff()">Cancel</button>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">
+    Loading staff...
+  </div>
+
+  <table *ngIf="!isLoading && filteredStaffList().length">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Username</th>
+        <th>Status</th>
+        <th>Office</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let staff of filteredStaffList()">
+        <td>{{ staff.id }}</td>
+        <td>{{ staff.name }}</td>
+        <td>{{ staff.email }}</td>
+        <td>{{ staff.role === 'deleted employees' ? 'Deleted Employees' : (staff.role | titlecase) }}</td>
+        <td>{{ staff.username }}</td>
+        <td>{{ staff.status | titlecase }}</td>
+        <td>{{ staff.officeLocation || 'N/A' }}</td>
+        <td>
+          <button type="button" class="edit" (click)="openEditStaff(staff)">Edit</button>
+          <button type="button" class="toggle" (click)="toggleStatus(staff)">
+            {{ staff.status === 'active' ? 'Deactivate' : 'Activate' }}
+          </button>
+          <button type="button" class="reset" (click)="resetPassword(staff)">Reset Password</button>
+          <button type="button" class="delete" (click)="markAsDeleted(staff)">Delete</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!isLoading && !filteredStaffList().length" class="empty-state">
+    No staff records found.
+  </div>
+</div>

@@ -1,0 +1,178 @@
+<div class="timesheet-list-container">
+  <div class="header">
+    <h1>Timesheets</h1>
+    <a class="btn primary" routerLink="/admin/timesheets/new">New Timesheet</a>
+  </div>
+
+  <section class="filters-card">
+    <div class="filter-group">
+      <label>
+        Staff Member
+        <select [(ngModel)]="filters.staff_user_id" name="filterStaff">
+          <option value="">All staff</option>
+          <option *ngFor="let option of staffOptions" [value]="option.user_id">
+            {{ option.display }}
+          </option>
+        </select>
+      </label>
+
+      <label>
+        Status
+        <select [(ngModel)]="filters.status" name="filterStatus">
+          <option value="">All statuses</option>
+          <option *ngFor="let status of statuses" [value]="status">{{ status | titlecase }}</option>
+        </select>
+      </label>
+
+      <label>
+        From
+        <input type="date" [(ngModel)]="filters.date_from" name="filterFrom" />
+      </label>
+
+      <label>
+        To
+        <input type="date" [(ngModel)]="filters.date_to" name="filterTo" />
+      </label>
+    </div>
+
+    <div class="filter-actions">
+      <button type="button" class="btn primary" (click)="applyFilters()">Apply</button>
+      <button type="button" class="btn" (click)="clearFilters()">Reset</button>
+      <label class="toggle">
+        <input type="checkbox" [(ngModel)]="showApproved" (change)="applyFilters()" />
+        <span>Show Approved</span>
+      </label>
+    </div>
+  </section>
+
+  <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
+
+  <div class="content">
+    <div class="list-panel">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Staff</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Total (min)</th>
+            <th>Employee Sig</th>
+            <th>Manager Sig</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let sheet of timesheets"
+            (click)="selectTimesheet(sheet)"
+            [class.selected]="selectedTimesheet?.timesheet_id === sheet.timesheet_id"
+          >
+            <td>{{ sheet.timesheet_id }}</td>
+            <td>{{ sheet.staff_display_name || sheet.staff_user_id }}</td>
+            <td>{{ sheet.work_date }}</td>
+            <td><span class="status-tag status-{{ sheet.status }}">{{ sheet.status | titlecase }}</span></td>
+            <td>{{ sheet.total_minutes ?? 'N/A' }}</td>
+            <td>{{ sheet.has_employee_signature ? 'Yes' : 'No' }}</td>
+            <td>{{ sheet.has_manager_signature ? 'Yes' : 'No' }}</td>
+          </tr>
+          <tr *ngIf="!timesheets.length && !isLoadingList">
+            <td colspan="7" class="muted">No timesheets found.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div *ngIf="isLoadingList" class="loading">Loading timesheets...</div>
+      <div *ngIf="meta" class="list-meta">
+        Total: {{ meta.total }} | Page {{ meta.page }} / {{ meta.totalPages }}
+      </div>
+      <div *ngIf="meta && meta.totalPages > 1" class="pagination">
+        <button type="button" class="btn" (click)="prevPage()" [disabled]="currentPage <= 1">Previous</button>
+        <span>Page {{ currentPage }} of {{ meta.totalPages }}</span>
+        <button type="button" class="btn" (click)="nextPage()" [disabled]="meta && currentPage >= meta.totalPages">Next</button>
+      </div>
+    </div>
+
+    <div class="detail-panel" *ngIf="selectedTimesheet">
+      <div class="detail-header">
+        <h2>Timesheet #{{ selectedTimesheet.timesheet_id }}</h2>
+        <button type="button" class="btn" (click)="refreshDetail()">Refresh</button>
+      </div>
+
+      <div *ngIf="isLoadingDetail" class="loading">Loading detail...</div>
+      <div *ngIf="detailError" class="alert alert-error">{{ detailError }}</div>
+
+      <div class="detail-content" *ngIf="!isLoadingDetail && !detailError">
+        <dl>
+          <div>
+            <dt>Staff Member</dt>
+            <dd>{{ selectedTimesheet.staff_display_name || selectedTimesheet.staff_user_id }}</dd>
+          </div>
+          <div>
+            <dt>Work Date</dt>
+            <dd>{{ selectedTimesheet.work_date }}</dd>
+          </div>
+          <div>
+            <dt>Start / End</dt>
+            <dd>{{ selectedTimesheet.start_time || 'N/A' }} → {{ selectedTimesheet.end_time || 'N/A' }}</dd>
+          </div>
+          <div>
+            <dt>Total Minutes</dt>
+            <dd>{{ selectedTimesheet.total_minutes ?? 'N/A' }}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd><span class="status-tag status-{{ selectedTimesheet.status }}">{{ selectedTimesheet.status | titlecase }}</span></dd>
+          </div>
+          <div>
+            <dt>Location</dt>
+            <dd>{{ selectedTimesheet.location || 'N/A' }}</dd>
+          </div>
+          <div>
+            <dt>Notes</dt>
+            <dd>{{ selectedTimesheet.notes || 'N/A' }}</dd>
+          </div>
+          <div>
+            <dt>Approved By</dt>
+            <dd>{{ selectedTimesheet.approved_by_display_name || 'N/A' }}</dd>
+          </div>
+        </dl>
+
+        <div class="status-actions">
+          <span>Update Status:</span>
+          <button type="button" class="btn" (click)="updateStatus('submitted')" [disabled]="isSigning">Submitted</button>
+          <button type="button" class="btn" (click)="updateStatus('approved')" [disabled]="isSigning">Approved</button>
+          <button type="button" class="btn" (click)="updateStatus('rejected')" [disabled]="isSigning">Rejected</button>
+        </div>
+        <div *ngIf="statusSuccessMessage" class="alert alert-success">{{ statusSuccessMessage }}</div>
+
+        <section class="signature-view">
+          <h3>Existing Signatures</h3>
+          <div class="signature-gallery" *ngIf="selectedTimesheet.signatures.length; else noSignatures">
+            <figure *ngFor="let sig of selectedTimesheet.signatures">
+              <figcaption>{{ sig.signer_role | titlecase }} signature<br />
+                <small>Signed {{ sig.signed_at | date:'medium' }}</small>
+              </figcaption>
+              <img [src]="sig.signature_data_url" [alt]="sig.signer_role + ' signature'" />
+            </figure>
+          </div>
+          <ng-template #noSignatures>
+            <p class="muted">No signatures yet.</p>
+          </ng-template>
+        </section>
+
+        <section class="signature-capture">
+          <div class="signature-header">
+            <h3>Manager Signature</h3>
+            <button type="button" class="btn link" (click)="clearManagerSignature()">Clear</button>
+          </div>
+          <canvas #managerSignCanvas class="signature-canvas" width="400" height="160"></canvas>
+          <div *ngIf="signError" class="alert alert-error">{{ signError }}</div>
+          <button type="button" class="btn primary" (click)="submitManagerSignature()" [disabled]="isSigning">
+            {{ isSigning ? 'Saving...' : 'Sign as Manager' }}
+          </button>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+
