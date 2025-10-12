@@ -10,6 +10,12 @@
   align-items: center;
 }
 
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
 .filters-card {
   background: #ffffff;
   border-radius: 12px;

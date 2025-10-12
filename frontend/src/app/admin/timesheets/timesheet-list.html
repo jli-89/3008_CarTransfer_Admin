@@ -1,7 +1,10 @@
 <div class="timesheet-list-container">
   <div class="header">
     <h1>Timesheets</h1>
-    <a class="btn primary" routerLink="/admin/timesheets/new">New Timesheet</a>
+    <div class="header-actions">
+      <button type="button" class="btn secondary" (click)="navigateToDashboard()">Return to Dashboard</button>
+      <a class="btn primary" routerLink="/admin/timesheets/new">New Timesheet</a>
+    </div>
   </div>
 
   <section class="filters-card">

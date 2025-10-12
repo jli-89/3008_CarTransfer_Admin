@@ -264,8 +264,9 @@ export class TimesheetCreateComponent implements OnInit, AfterViewInit, OnDestro
     this.employeePad?.clear();
   }
 
-  navigateToList(): void {
-    this.router.navigate(['/admin/timesheets']);
+  navigateToDashboard(): void {
+    const target = this.router.url.startsWith('/staff') ? '/staff/dashboard' : '/admin/dashboard';
+    this.router.navigate([target]);
   }
 
   private loadStaffOptions(): void {

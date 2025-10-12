@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 import {
   SignTimesheetPayload,
@@ -200,7 +200,10 @@ export class TimesheetListComponent implements OnInit, OnDestroy {
 
   private managerPad?: SignaturePadController;
 
-  constructor(private readonly timesheetService: TimesheetManagementService) {}
+  constructor(
+    private readonly timesheetService: TimesheetManagementService,
+    private readonly router: Router
+  ) {}
 
   ngOnInit(): void {
     this.loadStaffOptions();
@@ -220,6 +223,10 @@ export class TimesheetListComponent implements OnInit, OnDestroy {
     this.filters = {};
     this.currentPage = 1;
     this.fetchTimesheets();
+  }
+
+  navigateToDashboard(): void {
+    this.router.navigate(['/admin/dashboard']);
   }
 
   goToPage(page: number): void {
