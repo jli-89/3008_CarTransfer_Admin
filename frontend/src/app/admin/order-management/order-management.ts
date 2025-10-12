@@ -553,6 +553,11 @@ submitNewOrder(): void {
 
 
   openOrderEdit(order: OrderRecord): void {
+    if (this.editingOrderId === order.order_id) {
+      this.cancelOrderEdit();
+      return;
+    }
+    this.cancelItemEdit();
     this.editingOrderId = order.order_id;
     this.orderEditError = null;
     this.orderEditForm = {
@@ -851,6 +856,10 @@ saveOrderEdit(order: OrderRecord): void {
 
 
   openItemEdit(order: OrderRecord, item: OrderItemRecord): void {
+    if (this.editingItemId === item.item_id) {
+      this.cancelItemEdit();
+      return;
+    }
     this.editingItemId = item.item_id;
     this.itemEditOrderId = order.order_id;
     this.itemEditError = null;

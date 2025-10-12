@@ -61,6 +61,7 @@ button:hover {
   margin-top: 10px;
 }
 
+/* Forgot password UI disabled for now.
 .forgot-password {
   margin-top: 15px;
 }
@@ -74,3 +75,4 @@ button:hover {
 .forgot-password a:hover {
   text-decoration: underline;
 }
+*/

@@ -218,247 +218,263 @@
     No orders match the current filters.
   </div>
 
-  <table class="orders-table" *ngIf="orders.length">
-    <thead>
-      <tr>
-        <th>Order Code</th>
-        <th>Customer</th>
-        <th>Email</th>
-        <th>Phone</th>
-        <th>Status</th>
-        <th>Total (AUD)</th>
-        <th>Created</th>
-        <th class="actions-header">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <ng-container *ngFor="let order of orders; trackBy: trackByOrderId">
-        <tr>
-          <td>{{ order.public_order_code }}</td>
-          <td>{{ order.customer_name }}</td>
-          <td>{{ order.customer_email }}</td>
-          <td>{{ order.customer_phone }}</td>
-          <td><span class="status-tag">{{ order.order_status }}</span></td>
-          <td>{{ order.price_total !== null ? (order.price_total | number:'1.2-2') : 'N/A' }}</td>
-          <td>{{ order.created_at | date: 'medium' }}</td>
-          <td class="actions-cell">
-            <button type="button" class="btn" (click)="toggleOrderItems(order.order_id)">
-              {{ isOrderExpanded(order.order_id) ? 'Hide items' : 'Show items' }}
-            </button>
-            <button type="button" class="btn" (click)="openOrderEdit(order)">Edit order</button>
-          </td>
-        </tr>
+    <div class="order-list" *ngIf="orders.length">
+    <article
+      class="order-card"
+      *ngFor="let order of orders; trackBy: trackByOrderId"
+      [class.is-editing]="editingOrderId === order.order_id"
+      [class.is-expanded]="autoExpandAll || isOrderExpanded(order.order_id)"
+    >
+      <header class="order-card-header">
+        <div class="order-card-title">
+          <span class="order-code">{{ order.public_order_code || ('Order #' + order.order_id) }}</span>
+          <span class="order-subtitle">Created {{ order.created_at | date: 'medium' }}</span>
+        </div>
+        <div class="order-card-actions">
+          <span class="status-tag" [attr.data-status]="order.order_status">{{ order.order_status }}</span>
+          <div class="order-total" *ngIf="order.price_total !== null">
+            <span class="order-total-label">Total</span>
+            <span class="order-total-value">{{ order.price_total | number:'1.2-2' }}</span>
+          </div>
+          <button type="button" class="btn ghost" (click)="toggleOrderItems(order.order_id)">
+            {{ (autoExpandAll || isOrderExpanded(order.order_id)) ? 'Hide items' : 'Show items' }}
+          </button>
+          <button type="button" class="btn" (click)="openOrderEdit(order)">
+            {{ editingOrderId === order.order_id ? 'Close edit' : 'Edit order' }}
+          </button>
+        </div>
+      </header>
 
-        <tr *ngIf="editingOrderId === order.order_id" class="order-edit-row">
-          <td colspan="8">
-            <form (ngSubmit)="saveOrderEdit(order)" class="edit-form" novalidate>
-              <div class="form-grid">
-                <label>
-                  Customer Name
-                  <input type="text" [(ngModel)]="orderEditForm!.customer_name" name="editCustomerName" required />
-                </label>
-                <label>
-                  Customer Email
-                  <input type="email" [(ngModel)]="orderEditForm!.customer_email" name="editCustomerEmail" required />
-                </label>
-                <label>
-                  Customer Phone
-                  <input type="text" [(ngModel)]="orderEditForm!.customer_phone" name="editCustomerPhone" required />
-                </label>
-                <label>
-                  Order Status
-                  <select [(ngModel)]="orderEditForm!.order_status" name="editOrderStatus" required>
-                    <option value="" disabled>Select status</option>
-                    <option *ngFor="let status of orderStatusOptions" [value]="status">{{ status }}</option>
-                  </select>
-                </label>
-              <label>
-                Price Total (AUD)
-                <input type="text" [(ngModel)]="orderEditForm!.price_total" name="editPriceTotal" placeholder="e.g. 120.00" />
-              </label>
-              <label>
-                Office Location
-                <input type="text" [(ngModel)]="orderEditForm!.office_location" name="editOfficeLocation" />
-              </label>
-              <label class="readonly">
-                First Contact
-                <input
-                  type="text"
-                  [value]="order.first_contact_name || (order.first_contact ? ('User #' + order.first_contact) : 'Unassigned')"
-                  disabled
-                />
-              </label>
-              <label>
-                Current Handler
-                <select [(ngModel)]="orderEditForm!.current_person" name="editCurrentPerson">
-                  <option value="">Unassigned</option>
-                  <option *ngFor="let staff of staffOptions" [value]="staff.user_id">
-                    {{ staff.display }}{{ staff.status === 'active' ? '' : ' (inactive)' }}
-                  </option>
-                </select>
-              </label>
-              <label>
-                Previous Handler
-                <select [(ngModel)]="orderEditForm!.previous_person" name="editPreviousPerson">
-                  <option value="">None</option>
-                  <option *ngFor="let staff of staffOptions" [value]="staff.user_id">
-                    {{ staff.display }}{{ staff.status === 'active' ? '' : ' (inactive)' }}
-                  </option>
-                </select>
-              </label>
+      <dl class="order-overview">
+        <div class="overview-item">
+          <dt>Customer</dt>
+          <dd>
+            <div>{{ order.customer_name || 'N/A' }}</div>
+            <div class="muted" *ngIf="order.customer_email">{{ order.customer_email }}</div>
+          </dd>
+        </div>
+        <div class="overview-item">
+          <dt>Phone</dt>
+          <dd>{{ order.customer_phone || 'N/A' }}</dd>
+        </div>
+        <div class="overview-item">
+          <dt>Office</dt>
+          <dd>{{ order.office_location || 'N/A' }}</dd>
+        </div>
+        <div class="overview-item">
+          <dt>First Contact</dt>
+          <dd>{{ order.first_contact_name || (order.first_contact ? order.first_contact : 'N/A') }}</dd>
+        </div>
+        <div class="overview-item">
+          <dt>Current Handler</dt>
+          <dd>{{ order.current_person_name || (order.current_person ? order.current_person : 'N/A') }}</dd>
+        </div>
+        <div class="overview-item">
+          <dt>Previous Handler</dt>
+          <dd>{{ order.previous_person_name || (order.previous_person ? order.previous_person : 'N/A') }}</dd>
+        </div>
+      </dl>
 
-              <!-- <label class="note-field">
-                Note
-                <textarea [(ngModel)]="orderEditForm!.note" name="editOrderNote" rows="2"></textarea>
-              </label> -->
+      <section *ngIf="editingOrderId === order.order_id" class="order-edit-card">
+        <h3>Edit order</h3>
+        <form (ngSubmit)="saveOrderEdit(order)" class="edit-form" novalidate>
+          <div class="form-grid">
+            <label>
+              Customer Name
+              <input type="text" [(ngModel)]="orderEditForm!.customer_name" name="editCustomerName" required />
+            </label>
+            <label>
+              Customer Email
+              <input type="email" [(ngModel)]="orderEditForm!.customer_email" name="editCustomerEmail" required />
+            </label>
+            <label>
+              Customer Phone
+              <input type="text" [(ngModel)]="orderEditForm!.customer_phone" name="editCustomerPhone" required />
+            </label>
+            <label>
+              Order Status
+              <select [(ngModel)]="orderEditForm!.order_status" name="editOrderStatus" required>
+                <option value="" disabled>Select status</option>
+                <option *ngFor="let status of orderStatusOptions" [value]="status">{{ status }}</option>
+              </select>
+            </label>
+            <label>
+              Price Total (AUD)
+              <input type="text" [(ngModel)]="orderEditForm!.price_total" name="editPriceTotal" placeholder="e.g. 120.00" />
+            </label>
+            <label>
+              Office Location
+              <input type="text" [(ngModel)]="orderEditForm!.office_location" name="editOfficeLocation" />
+            </label>
+            <label class="readonly">
+              First Contact
+              <input
+                type="text"
+                [value]="order.first_contact_name || (order.first_contact ? ('User #' + order.first_contact) : 'Unassigned')"
+                disabled
+              />
+            </label>
+            <label>
+              Current Handler
+              <select [(ngModel)]="orderEditForm!.current_person" name="editCurrentPerson">
+                <option value="">Unassigned</option>
+                <option *ngFor="let staff of staffOptions" [value]="staff.user_id">
+                  {{ staff.display }}{{ staff.status === 'active' ? '' : ' (inactive)' }}
+                </option>
+              </select>
+            </label>
+            <label>
+              Previous Handler
+              <select [(ngModel)]="orderEditForm!.previous_person" name="editPreviousPerson">
+                <option value="">None</option>
+                <option *ngFor="let staff of staffOptions" [value]="staff.user_id">
+                  {{ staff.display }}{{ staff.status === 'active' ? '' : ' (inactive)' }}
+                </option>
+              </select>
+            </label>
+            <label class="note-field">
+              Existing Note
+              <textarea [value]="order.note || ''" rows="2" disabled></textarea>
+            </label>
+            <label class="note-field">
+              Append Note
+              <textarea
+                [(ngModel)]="orderEditForm!.append_note"
+                name="editOrderAppend"
+                rows="2"
+                placeholder="Add a note that will be appended (timestamp & your name will be added automatically)."
+              ></textarea>
+            </label>
+          </div>
 
-              <!-- === Edit 表單：替換原本 Note textarea === -->
-              <label class="note-field">
-                Existing Note
-                <textarea [value]="order.note || ''" rows="2" disabled></textarea>
-              </label>
+          <div class="form-actions">
+            <button type="submit" class="btn primary" [disabled]="isSavingOrder">Save</button>
+            <button type="button" class="btn" (click)="cancelOrderEdit()" [disabled]="isSavingOrder">Cancel</button>
+          </div>
 
-              <label class="note-field">
-                Append Note
-                <textarea
-                  [(ngModel)]="orderEditForm!.append_note"
-                  name="editOrderAppend"
-                  rows="2"
-                  placeholder="Add a note — it will be appended (timestamp & your name will be added automatically)."
-                ></textarea>
-              </label>
+          <div *ngIf="orderEditError" class="alert alert-error">{{ orderEditError }}</div>
+        </form>
+      </section>
 
-            </div>
+      <section *ngIf="autoExpandAll || isOrderExpanded(order.order_id)" class="order-items">
+        <h3>Order items</h3>
+        <div class="order-detail-summary">
+          <div class="detail-item">
+            <span class="detail-label">Office</span>
+            <span>{{ order.office_location || 'N/A' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">First Contact</span>
+            <span>{{ order.first_contact_name || (order.first_contact ? order.first_contact : 'N/A') }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Current Handler</span>
+            <span>{{ order.current_person_name || (order.current_person ? order.current_person : 'N/A') }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Previous Handler</span>
+            <span>{{ order.previous_person_name || (order.previous_person ? order.previous_person : 'N/A') }}</span>
+          </div>
+        </div>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Plate</th>
+              <th>Vehicle</th>
+              <th>Pickup</th>
+              <th>Delivery</th>
+              <th>Status</th>
+              <th>Value</th>
+              <th>Note</th>
+              <th class="actions-header">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let item of order.items; trackBy: trackByItemId">
+              <tr>
+                <td>{{ item.item_id }}</td>
+                <td>{{ item.snap_plate_number || 'N/A' }}</td>
+                <td>
+                  <div>{{ item.snap_maker || 'N/A' }} {{ item.snap_model || '' }}</div>
+                  <small *ngIf="item.snap_vin">VIN: {{ item.snap_vin }}</small>
+                </td>
+                <td>{{ item.pickup_location }}</td>
+                <td>{{ item.delivery_location }}</td>
+                <td><span class="status-tag secondary">{{ item.transfer_status }}</span></td>
+                <td>{{ item.snap_vehicle_value !== null ? (item.snap_vehicle_value | number:'1.2-2') : 'N/A' }}</td>
+                <td>{{ item.transfer_note || 'N/A' }}</td>
+                <td class="actions-cell">
+                  <button type="button" class="btn" (click)="openItemEdit(order, item)">
+                    {{ editingItemId === item.item_id ? 'Close edit' : 'Edit item' }}
+                  </button>
+                </td>
+              </tr>
 
-              <div class="form-actions">
-                <button type="submit" class="btn primary" [disabled]="isSavingOrder">Save</button>
-                <button type="button" class="btn" (click)="cancelOrderEdit()" [disabled]="isSavingOrder">Cancel</button>
-              </div>
+              <tr *ngIf="editingItemId === item.item_id" class="item-edit-row">
+                <td colspan="9">
+                  <form (ngSubmit)="saveItemEdit(order, item)" class="edit-form" novalidate>
+                    <div class="form-grid">
+                      <label>
+                        Pickup Location
+                        <input type="text" [(ngModel)]="itemEditForm!.pickup_location" name="editPickup" required />
+                      </label>
+                      <label>
+                        Delivery Location
+                        <input type="text" [(ngModel)]="itemEditForm!.delivery_location" name="editDelivery" required />
+                      </label>
+                      <label>
+                        Transfer Status
+                        <select [(ngModel)]="itemEditForm!.transfer_status" name="editTransferStatus" required>
+                          <option value="" disabled>Select status</option>
+                          <option *ngFor="let status of itemStatusOptions" [value]="status">{{ status }}</option>
+                        </select>
+                      </label>
+                      <label>
+                        Vehicle Value (AUD)
+                        <input type="text" [(ngModel)]="itemEditForm!.snap_vehicle_value" name="editVehicleValue" placeholder="e.g. 45000.00" />
+                      </label>
+                      <label>
+                        Plate Number
+                        <input type="text" [(ngModel)]="itemEditForm!.snap_plate_number" name="editPlate" />
+                      </label>
+                      <label>
+                        VIN
+                        <input type="text" [(ngModel)]="itemEditForm!.snap_vin" name="editVin" />
+                      </label>
+                      <label>
+                        Maker
+                        <input type="text" [(ngModel)]="itemEditForm!.snap_maker" name="editMaker" />
+                      </label>
+                      <label>
+                        Model
+                        <input type="text" [(ngModel)]="itemEditForm!.snap_model" name="editModel" />
+                      </label>
+                      <label>
+                        Colour
+                        <input type="text" [(ngModel)]="itemEditForm!.snap_colour" name="editColour" />
+                      </label>
+                      <label class="note-field">
+                        Transfer Note
+                        <textarea [(ngModel)]="itemEditForm!.transfer_note" name="editTransferNote" rows="2"></textarea>
+                      </label>
+                    </div>
 
-              <div *ngIf="orderEditError" class="alert alert-error">{{ orderEditError }}</div>
-            </form>
-          </td>
-        </tr>
+                    <div class="form-actions">
+                      <button type="submit" class="btn primary" [disabled]="isSavingItem">Save</button>
+                      <button type="button" class="btn" (click)="cancelItemEdit()" [disabled]="isSavingItem">Cancel</button>
+                    </div>
 
-        <tr *ngIf="autoExpandAll || isOrderExpanded(order.order_id)" class="order-items-row">
-          <td colspan="8">
-            <div class="order-detail-summary">
-              <div class="detail-item">
-                <span class="detail-label">Office</span>
-                <span>{{ order.office_location || 'N/A' }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">First Contact</span>
-                <span>{{ order.first_contact_name || (order.first_contact ? order.first_contact : 'N/A') }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">Current Handler</span>
-                <span>{{ order.current_person_name || (order.current_person ? order.current_person : 'N/A') }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">Previous Handler</span>
-                <span>{{ order.previous_person_name || (order.previous_person ? order.previous_person : 'N/A') }}</span>
-              </div>
-            </div>
-            <table class="items-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Plate</th>
-                  <th>Vehicle</th>
-                  <th>Pickup</th>
-                  <th>Delivery</th>
-                  <th>Status</th>
-                  <th>Value</th>
-                  <th>Note</th>
-                  <th class="actions-header">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <ng-container *ngFor="let item of order.items; trackBy: trackByItemId">
-                  <tr>
-                    <td>{{ item.item_id }}</td>
-                    <td>{{ item.snap_plate_number || 'N/A' }}</td>
-                    <td>
-                      <div>{{ item.snap_maker || 'N/A' }} {{ item.snap_model || '' }}</div>
-                      <small *ngIf="item.snap_vin">VIN: {{ item.snap_vin }}</small>
-                    </td>
-                    <td>{{ item.pickup_location }}</td>
-                    <td>{{ item.delivery_location }}</td>
-                    <td><span class="status-tag secondary">{{ item.transfer_status }}</span></td>
-                    <td>{{ item.snap_vehicle_value !== null ? (item.snap_vehicle_value | number:'1.2-2') : 'N/A' }}</td>
-                    <td>{{ item.transfer_note || 'N/A' }}</td>
-                    <td class="actions-cell">
-                      <button type="button" class="btn" (click)="openItemEdit(order, item)">Edit item</button>
-                    </td>
-                  </tr>
-
-                  <tr *ngIf="editingItemId === item.item_id" class="item-edit-row">
-                    <td colspan="9">
-                      <form (ngSubmit)="saveItemEdit(order, item)" class="edit-form" novalidate>
-                        <div class="form-grid">
-                          <label>
-                            Pickup Location
-                            <input type="text" [(ngModel)]="itemEditForm!.pickup_location" name="editPickup" required />
-                          </label>
-                          <label>
-                            Delivery Location
-                            <input type="text" [(ngModel)]="itemEditForm!.delivery_location" name="editDelivery" required />
-                          </label>
-                          <label>
-                            Transfer Status
-                            <select [(ngModel)]="itemEditForm!.transfer_status" name="editTransferStatus" required>
-                              <option value="" disabled>Select status</option>
-                              <option *ngFor="let status of itemStatusOptions" [value]="status">{{ status }}</option>
-                            </select>
-                          </label>
-                          <label>
-                            Vehicle Value (AUD)
-                            <input type="text" [(ngModel)]="itemEditForm!.snap_vehicle_value" name="editVehicleValue" placeholder="e.g. 45000.00" />
-                          </label>
-                          <label>
-                            Plate Number
-                            <input type="text" [(ngModel)]="itemEditForm!.snap_plate_number" name="editPlate" />
-                          </label>
-                          <label>
-                            VIN
-                            <input type="text" [(ngModel)]="itemEditForm!.snap_vin" name="editVin" />
-                          </label>
-                          <label>
-                            Maker
-                            <input type="text" [(ngModel)]="itemEditForm!.snap_maker" name="editMaker" />
-                          </label>
-                          <label>
-                            Model
-                            <input type="text" [(ngModel)]="itemEditForm!.snap_model" name="editModel" />
-                          </label>
-                          <label>
-                            Colour
-                            <input type="text" [(ngModel)]="itemEditForm!.snap_colour" name="editColour" />
-                          </label>
-                          <label class="note-field">
-                            Transfer Note
-                            <textarea [(ngModel)]="itemEditForm!.transfer_note" name="editTransferNote" rows="2"></textarea>
-                          </label>
-                        </div>
-
-                        <div class="form-actions">
-                          <button type="submit" class="btn primary" [disabled]="isSavingItem">Save</button>
-                          <button type="button" class="btn" (click)="cancelItemEdit()" [disabled]="isSavingItem">Cancel</button>
-                        </div>
-
-                        <div *ngIf="itemEditError" class="alert alert-error">{{ itemEditError }}</div>
-                      </form>
-                    </td>
-                  </tr>
-                </ng-container>
-              </tbody>
-            </table>
-          </td>
-        </tr>
-      </ng-container>
-    </tbody>
-  </table>
+                    <div *ngIf="itemEditError" class="alert alert-error">{{ itemEditError }}</div>
+                  </form>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </section>
+    </article>
+  </div>
 
   <div class="pagination-bar" *ngIf="meta && meta.totalPages > 1">
     <button type="button" class="btn" (click)="prevPage()" [disabled]="currentPage <= 1">Previous</button>
