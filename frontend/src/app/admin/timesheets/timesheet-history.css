@@ -144,6 +144,11 @@
   color: #ffffff;
 }
 
+.btn.secondary {
+  border-color: #0b6efd;
+  color: #0b6efd;
+}
+
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
